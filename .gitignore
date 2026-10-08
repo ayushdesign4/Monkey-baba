@@ -1,0 +1,43 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment variables & secrets (NEVER COMMIT)
+.env
+.env.*
+*.key
+*.pem
+credentials.json
+token.json
+secrets/
+client_secrets.json
+
+# Run outputs and temporary media
+output/
+*.mp4
+*.mp3
+*.wav
+*.mov
+*.jpg
+*.jpeg
+*.png
+*.webp
+!data/sample_*.jpg
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

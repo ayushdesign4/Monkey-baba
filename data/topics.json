@@ -1,0 +1,42 @@
+[
+  {
+    "topic_id": "topic-seed-001",
+    "topic": "The Mystery of the Lost Roman Legion in Ancient China",
+    "story_summary": "In 53 BC, Roman legionaries vanished after the Battle of Carrhae, leaving traces in a remote Chinese desert oasis where locals carried Caucasian traits.",
+    "date": "2026-10-01",
+    "video_id": null,
+    "status": "seed"
+  },
+  {
+    "topic_id": "topic-seed-002",
+    "topic": "The Silent Zone of Mapimí: Where Radio Waves Disappear",
+    "story_summary": "A mysterious desert expanse in Mexico where radio transmissions fail, compasses spin wildly, and meteorites strike with eerie frequency.",
+    "date": "2026-10-02",
+    "video_id": null,
+    "status": "seed"
+  },
+  {
+    "topic_id": "topic-20261008-141005",
+    "topic": "The Green Children of Woolpit: Medieval Mystery",
+    "story_summary": "Two children with emerald-green skin suddenly emerged from wolf pits in Suffolk, unable to eat anything except raw green beans and describing a sunless twilight realm.",
+    "date": "2026-10-08",
+    "video_id": null,
+    "status": "selected"
+  },
+  {
+    "topic_id": "topic-20261008-141134",
+    "topic": "The Sealed Chamber of Derinkuyu",
+    "story_summary": "Eighteen levels beneath the earth, ancient builders carved a metropolis capable of sheltering 20,000 people from an unknown surface terror. Ground-penetrating radar recently discovered a locked, reinforced chamber with air shafts plunging deeper than modern drills can penetrate. Historians still cannot answer what ancient horror compelled an entire civilization to lock themselves underground and swallow the key.",
+    "date": "2026-10-08",
+    "video_id": null,
+    "status": "selected"
+  },
+  {
+    "topic_id": "topic-20261008-141226",
+    "topic": "The Deepest Hole on Earth and the Sound They Buried",
+    "story_summary": "During the Cold War, the Kola Superdeep Borehole penetrated deep into the unknown subterranean crust. Before abruptly sealing the project under heavy steel and secrecy, instruments captured anomalous acoustic vibrations that sounded horrifyingly organic. Decades later, the true reason the USSR abandoned mankind's deepest descent remains officially classified.",
+    "date": "2026-10-08",
+    "video_id": "sim_42972a63",
+    "status": "simulated"
+  }
+]
