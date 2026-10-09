@@ -1,6 +1,12 @@
 """Test script for Groq text and structured JSON generation."""
 
 import os
+import sys
+from pathlib import Path
+
+# Add project root to sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import json
 import time
 import urllib.request
