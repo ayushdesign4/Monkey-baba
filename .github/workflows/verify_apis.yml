@@ -1,0 +1,100 @@
+name: Verify Live APIs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run Live Verification
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python -u -c '
+          import os, sys, time
+          from src.brain.gemini import GeminiProvider
+          from src.brain.groq import GroqProvider
+          from src.brain.manager import BrainManager
+
+          print("=" * 60)
+          print("MONKEY-BABA LIVE API VERIFICATION")
+          print("=" * 60)
+
+          # 1. Real Gemini Request
+          print("\n--- 1. Testing Real Gemini Request ---")
+          gemini = GeminiProvider()
+          print(f"Model: {gemini.model}")
+          if not gemini.is_configured():
+              print("GEMINI_STATUS: NOT TESTED (Missing key in secrets)")
+          else:
+              t0 = time.time()
+              try:
+                  resp = gemini.generate("Reply exactly: GEMINI_OK")
+                  el = time.time() - t0
+                  print("GEMINI_STATUS: PASS")
+                  print(f"Latency: {el:.2f}s")
+                  print(f"Output: {resp.strip()[:60]}")
+              except Exception as e:
+                  el = time.time() - t0
+                  err_str = str(e)
+                  if gemini.api_key:
+                      err_str = err_str.replace(gemini.api_key, "[REDACTED]")
+                  if "?key=" in err_str:
+                      err_str = err_str.split("?key=")[0] + " [KEY REDACTED]"
+                  print("GEMINI_STATUS: FAIL")
+                  print(f"Latency: {el:.2f}s")
+                  print(f"Error: {err_str[:300]}")
+
+          # 2. Real Groq Request
+          print("\n--- 2. Testing Real Groq Request ---")
+          groq = GroqProvider()
+          print(f"Model: {groq.model}")
+          if not groq.is_configured():
+              print("GROQ_STATUS: NOT TESTED (Missing key in secrets)")
+          else:
+              t0 = time.time()
+              try:
+                  resp = groq.generate("Reply exactly: GROQ_OK")
+                  el = time.time() - t0
+                  print("GROQ_STATUS: PASS")
+                  print(f"Latency: {el:.2f}s")
+                  print(f"Output: {resp.strip()[:60]}")
+              except Exception as e:
+                  el = time.time() - t0
+                  err_str = str(e)
+                  if groq.api_key:
+                      err_str = err_str.replace(groq.api_key, "[REDACTED]")
+                  print("GROQ_STATUS: FAIL")
+                  print(f"Latency: {el:.2f}s")
+                  print(f"Error: {err_str[:300]}")
+
+          # 3. Test Full Fallback Chain
+          print("\n--- 3. Testing Full Fallback Chain via BrainManager ---")
+          mgr = BrainManager()
+          try:
+              text, provider, fallback_used = mgr.generate_text("Provide one sentence about ancient mysteries.")
+              print(f"CHAIN_TEXT_STATUS: PASS (Provider={provider}, FallbackUsed={fallback_used})")
+              print(f"Text Output: {text[:80]}")
+          except Exception as e:
+              print(f"CHAIN_TEXT_STATUS: FAIL ({e})")
+
+          try:
+              script_data, s_provider, s_fallback = mgr.generate_json("Master Storyteller Topic: The Lost Tomb min_words: 100")
+              print(f"CHAIN_JSON_STATUS: PASS (Provider={s_provider}, Scenes={len(script_data.get(\"scenes\", []))})")
+          except Exception as e:
+              print(f"CHAIN_JSON_STATUS: FAIL ({e})")
+
+          print("\n" + "=" * 60)
+          print("VERIFICATION RUN COMPLETE")
+          print("=" * 60)
+          '

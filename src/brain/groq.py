@@ -18,7 +18,7 @@ class GroqProvider:
         return bool(self.api_key and len(self.api_key) > 5)
 
     def generate(self, prompt: str, system_instruction: str = "") -> str:
-        """Call Groq chat completion API."""
+        """Call Groq chat completion API with descriptive User-Agent header."""
         if not self.is_configured():
             raise ValueError("GROQ_API_KEY is not configured or invalid.")
 
@@ -41,7 +41,8 @@ class GroqProvider:
             data=json.dumps(payload).encode("utf-8"),
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.api_key}"
+                "Authorization": f"Bearer {self.api_key}",
+                "User-Agent": "Monkey-Baba/1.0"
             },
             method="POST"
         )
