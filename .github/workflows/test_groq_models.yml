@@ -15,34 +15,46 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Query Groq Models API
+      - name: Test Candidate Models
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           python -u -c '
-          import os, json, urllib.request
+          import os, json, time, urllib.request
 
           key = os.getenv("GROQ_API_KEY", "")
-          if not key:
-              print("GROQ_API_KEY is not set!")
-              exit(1)
+          candidates = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]
 
-          req = urllib.request.Request(
-              "https://api.groq.com/openai/v1/models",
-              headers={
-                  "Authorization": f"Bearer {key}",
-                  "User-Agent": "Monkey-Baba/1.0"
+          for m in candidates:
+              print(f"\nTesting model: {m}")
+              url = "https://api.groq.com/openai/v1/chat/completions"
+              payload = {
+                  "model": m,
+                  "messages": [
+                      {"role": "system", "content": "You are a helpful assistant. Respond with raw JSON only."},
+                      {"role": "user", "content": "Generate a JSON object with key title and a story of at least 110 words about space exploration."}
+                  ],
+                  "temperature": 0.7,
+                  "max_tokens": 1024
               }
-          )
-
-          try:
-              with urllib.request.urlopen(req) as resp:
-                  data = json.loads(resp.read().decode("utf-8"))
-                  models = [m["id"] for m in data.get("data", []) if m.get("active", True)]
-                  print("AVAILABLE_GROQ_MODELS:", sorted(models))
-          except Exception as e:
-              err = str(e)
-              if key:
-                  err = err.replace(key, "[REDACTED]")
-              print("ERROR fetching models:", err)
+              req = urllib.request.Request(
+                  url,
+                  data=json.dumps(payload).encode("utf-8"),
+                  headers={
+                      "Content-Type": "application/json",
+                      "Authorization": f"Bearer {key}",
+                      "User-Agent": "Monkey-Baba/1.0"
+                  },
+                  method="POST"
+              )
+              t0 = time.time()
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as resp:
+                      res = json.loads(resp.read().decode("utf-8"))
+                      text = res["choices"][0]["message"]["content"]
+                      el = time.time() - t0
+                      print(f"SUCCESS ({m}): Latency={el:.2f}s, Len={len(text.split())} words")
+                      print(f"Sample: {text[:150]}")
+              except Exception as e:
+                  print(f"FAIL ({m}): {e}")
           '
