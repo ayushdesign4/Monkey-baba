@@ -20,7 +20,7 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           python -u -c '
-          import os, json, time, urllib.request
+          import os, json, time, urllib.request, re
           from src.script.validator import ScriptValidator
           from src.script.generator import SCRIPT_PROMPT_TEMPLATE
 
@@ -31,46 +31,44 @@ jobs:
               min_words=100
           )
 
-          for model in ["qwen/qwen3.8-27b", "openai/gpt-oss-120b"]:
-              print(f"\n====================================\nTesting Script Generation on {model}...")
-              url = "https://api.groq.com/openai/v1/chat/completions"
-              payload = {
-                  "model": model,
-                  "messages": [
-                      {"role": "system", "content": "You are an award-winning YouTube Shorts narrative director. Respond ONLY with valid, unescaped raw JSON."},
-                      {"role": "user", "content": prompt}
-                  ],
-                  "temperature": 0.7,
-                  "max_tokens": 2048
-              }
-              req = urllib.request.Request(
-                  url,
-                  data=json.dumps(payload).encode("utf-8"),
-                  headers={
-                      "Content-Type": "application/json",
-                      "Authorization": f"Bearer {key}",
-                      "User-Agent": "Monkey-Baba/1.0"
-                  },
-                  method="POST"
-              )
-              t0 = time.time()
-              try:
-                  with urllib.request.urlopen(req, timeout=40) as resp:
-                      res = json.loads(resp.read().decode("utf-8"))
-                      content = res["choices"][0]["message"]["content"].strip()
-                      el = time.time() - t0
-                      # strip code block if any
-                      if "```" in content:
-                          import re
-                          m = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", content)
-                          content = m.group(1).strip() if m else content
-                      parsed = json.loads(content)
-                      is_valid, msg = ScriptValidator.validate(parsed)
-                      print(f"MODEL: {model}")
-                      print(f"LATENCY: {el:.2f}s")
-                      print(f"VALID_SCRIPT: {is_valid} (Reason: {msg})")
-                      print(f"WORD_COUNT: {parsed.get('word_count')}")
-                      print(f"SCENE_COUNT: {len(parsed.get('scenes', []))}")
-              except Exception as e:
-                  print(f"FAILED on {model}: {e}")
+          model = "openai/gpt-oss-120b"
+          print(f"Testing {model} with max_tokens 4096...")
+          payload = {
+              "model": model,
+              "messages": [
+                  {"role": "system", "content": "You are an award-winning YouTube Shorts narrative director. Respond ONLY with valid, unescaped raw JSON."},
+                  {"role": "user", "content": prompt}
+              ],
+              "temperature": 0.7,
+              "max_tokens": 4096
+          }
+          req = urllib.request.Request(
+              "https://api.groq.com/openai/v1/chat/completions",
+              data=json.dumps(payload).encode("utf-8"),
+              headers={
+                  "Content-Type": "application/json",
+                  "Authorization": f"Bearer {key}",
+                  "User-Agent": "Monkey-Baba/1.0"
+              },
+              method="POST"
+          )
+          t0 = time.time()
+          try:
+              with urllib.request.urlopen(req, timeout=50) as resp:
+                  res = json.loads(resp.read().decode("utf-8"))
+                  content = res["choices"][0]["message"]["content"].strip()
+                  el = time.time() - t0
+                  if "```" in content:
+                      m = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", content)
+                      content = m.group(1).strip() if m else content
+                  parsed = json.loads(content)
+                  is_valid, msg = ScriptValidator.validate(parsed)
+                  print(f"MODEL: {model}")
+                  print(f"LATENCY: {el:.2f}s")
+                  print(f"VALID_SCRIPT: {is_valid}")
+                  print(f"WORD_COUNT: {parsed.get(\"word_count\")}")
+                  print(f"SCENE_COUNT: {len(parsed.get(\"scenes\", []))}")
+                  print(f"TITLE: {parsed.get(\"title\")}")
+          except Exception as e:
+              print(f"FAILED on {model}: {e}")
           '
