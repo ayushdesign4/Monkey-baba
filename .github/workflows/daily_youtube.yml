@@ -63,15 +63,15 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           NOTIFICATION_EMAIL: ${{ secrets.NOTIFICATION_EMAIL }}
         run: |
-          EXTRA_ARGS=""
+          EXTRA_ARGS=()
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            EXTRA_ARGS="$EXTRA_ARGS --dry-run"
+            EXTRA_ARGS+=(--dry-run)
           fi
           if [ -n "${{ github.event.inputs.forced_topic }}" ]; then
-            EXTRA_ARGS="$EXTRA_ARGS --topic '${{ github.event.inputs.forced_topic }}'"
+            EXTRA_ARGS+=(--topic "${{ github.event.inputs.forced_topic }}")
           fi
 
-          python3 main.py $EXTRA_ARGS
+          python3 main.py "${EXTRA_ARGS[@]}"
 
       - name: Commit Updated Topic & Upload Records
         if: always()
