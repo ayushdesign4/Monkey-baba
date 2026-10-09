@@ -1,0 +1,85 @@
+name: Live API Smoke Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-apis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run Live API Smoke Test
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python -u -c '
+          import os, sys, time
+          from src.brain.gemini import GeminiProvider
+          from src.brain.groq import GroqProvider
+
+          print("=" * 60)
+          print("MONKEY-BABA LIVE API SMOKE TEST")
+          print("=" * 60)
+
+          # 1. Gemini
+          print("\n--- 1. Gemini API ---")
+          gemini = GeminiProvider()
+          print(f"Configured Model: {gemini.model}")
+          if not gemini.is_configured():
+              print("STATUS: NOT TESTED (GEMINI_API_KEY secret not found or empty in repository secrets)")
+          else:
+              t0 = time.time()
+              try:
+                  resp = gemini.generate("Reply exactly: GEMINI_OK")
+                  elapsed = time.time() - t0
+                  print("STATUS: PASS")
+                  print(f"Latency: {elapsed:.2f}s")
+                  print(f"Returned Usable Output: {bool(resp and resp.strip())}")
+                  print(f"Output: {resp.strip()[:60]}")
+              except Exception as e:
+                  elapsed = time.time() - t0
+                  err_str = str(e)
+                  if gemini.api_key:
+                      err_str = err_str.replace(gemini.api_key, "[REDACTED]")
+                  if "?key=" in err_str:
+                      err_str = err_str.split("?key=")[0] + " [KEY REDACTED]"
+                  print("STATUS: FAIL")
+                  print(f"Latency: {elapsed:.2f}s")
+                  print(f"Error: {err_str[:300]}")
+
+          # 2. Groq
+          print("\n--- 2. Groq API ---")
+          groq = GroqProvider()
+          print(f"Configured Model: {groq.model}")
+          if not groq.is_configured():
+              print("STATUS: NOT TESTED (GROQ_API_KEY secret not found or empty in repository secrets)")
+          else:
+              t0 = time.time()
+              try:
+                  resp = groq.generate("Reply exactly: GROQ_OK")
+                  elapsed = time.time() - t0
+                  print("STATUS: PASS")
+                  print(f"Latency: {elapsed:.2f}s")
+                  print(f"Returned Usable Output: {bool(resp and resp.strip())}")
+                  print(f"Output: {resp.strip()[:60]}")
+              except Exception as e:
+                  elapsed = time.time() - t0
+                  err_str = str(e)
+                  if groq.api_key:
+                      err_str = err_str.replace(groq.api_key, "[REDACTED]")
+                  print("STATUS: FAIL")
+                  print(f"Latency: {elapsed:.2f}s")
+                  print(f"Error: {err_str[:300]}")
+
+          print("\n" + "=" * 60)
+          print("SMOKE TEST FINISHED")
+          print("=" * 60)
+          '
