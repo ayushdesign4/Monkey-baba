@@ -31,6 +31,7 @@ class TestBrainProviders(unittest.TestCase):
         with patch("urllib.request.urlopen", side_effect=mock_urlopen):
             res = provider.generate("Test prompt")
             self.assertEqual(res, "GROQ_OK")
+            self.assertEqual(provider.model, "openai/gpt-oss-120b")
             self.assertIsNotNone(captured_req)
             self.assertEqual(captured_req.headers.get("User-agent"), "Monkey-Baba/1.0")
             self.assertEqual(captured_req.headers.get("Content-type"), "application/json")

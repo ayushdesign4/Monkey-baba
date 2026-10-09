@@ -1,18 +1,21 @@
 """Fallback #1 Brain Provider: Groq API."""
 
 import json
+import os
 import urllib.request
 import urllib.error
 from typing import Optional
 from src.config import GROQ_API_KEY
 from src.utils.logging import log
 
+DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b"
+
 class GroqProvider:
     name = "groq"
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "llama-3.3-70b-versatile"):
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
         self.api_key = api_key or GROQ_API_KEY
-        self.model = model
+        self.model = model or os.getenv("GROQ_MODEL", DEFAULT_GROQ_MODEL)
 
     def is_configured(self) -> bool:
         return bool(self.api_key and len(self.api_key) > 5)
