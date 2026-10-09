@@ -38,5 +38,13 @@
     "date": "2026-10-08",
     "video_id": "sim_42972a63",
     "status": "simulated"
+  },
+  {
+    "topic_id": "topic-20261009-085236",
+    "topic": "The Mystery of the Ancient Sunken Obelisk",
+    "story_summary": "Manually requested topic for execution.",
+    "date": "2026-10-09",
+    "video_id": "sim_dcafcb82",
+    "status": "simulated"
   }
 ]
