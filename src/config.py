@@ -37,6 +37,7 @@ FALLBACK_TTS_PROVIDERS = ["gtts", "offline"]
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 AGNES_API_KEY = os.getenv("AGNES_API_KEY", "")
+AGNES_BASE_URL = os.getenv("AGNES_BASE_URL", "https://apihub.agnes-ai.com/v1")
 
 # YouTube OAuth
 YOUTUBE_CLIENT_ID = os.getenv("YOUTUBE_CLIENT_ID", "")

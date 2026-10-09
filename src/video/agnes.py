@@ -6,15 +6,15 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 from typing import Optional
-from src.config import AGNES_API_KEY
+from src.config import AGNES_API_KEY, AGNES_BASE_URL
 from src.utils.logging import log, log_warn, log_error
 
 class AgnesVideoProvider:
     name = "agnes"
 
-    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://api.agnes.ai/v1"):
+    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None):
         self.api_key = api_key or AGNES_API_KEY
-        self.base_url = base_url.rstrip("/")
+        self.base_url = (base_url or AGNES_BASE_URL).rstrip("/")
 
     def is_configured(self) -> bool:
         return bool(self.api_key and len(self.api_key) > 4)
@@ -27,12 +27,12 @@ class AgnesVideoProvider:
         if not self.is_configured():
             raise ValueError("AGNES_API_KEY is not configured.")
 
-        url = f"{self.base_url}/videos/generations"
+        url = f"{self.base_url}/videos"
         payload = {
             "prompt": prompt,
             "aspect_ratio": "9:16",
             "duration": duration_seconds,
-            "model": "agnes-video-fast"
+            "model": "agnes-video-2.5"
         }
 
         req = urllib.request.Request(
@@ -40,7 +40,8 @@ class AgnesVideoProvider:
             data=json.dumps(payload).encode("utf-8"),
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.api_key}"
+                "Authorization": f"Bearer {self.api_key}",
+                "User-Agent": "Monkey-Baba/1.0"
             },
             method="POST"
         )
@@ -54,7 +55,7 @@ class AgnesVideoProvider:
         except Exception as e:
             raise RuntimeError(f"Agnes submission failed: {e}")
 
-        task_id = data.get("id") or data.get("task_id")
+        task_id = data.get("video_id") or data.get("id") or data.get("task_id")
         video_url = data.get("video_url") or data.get("url")
 
         # If already synchronous
@@ -66,7 +67,7 @@ class AgnesVideoProvider:
             raise RuntimeError(f"Agnes API did not return video_url or task_id: {data}")
 
         # Polling loop
-        poll_url = f"{self.base_url}/videos/generations/{task_id}"
+        poll_url = f"{self.base_url}/agnesapi?video_id={task_id}"
         max_wait = 180
         start_time = time.time()
 
@@ -74,14 +75,17 @@ class AgnesVideoProvider:
             time.sleep(5)
             poll_req = urllib.request.Request(
                 poll_url,
-                headers={"Authorization": f"Bearer {self.api_key}"}
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "User-Agent": "Monkey-Baba/1.0"
+                }
             )
             try:
                 with urllib.request.urlopen(poll_req, timeout=20) as p_resp:
                     status_data = json.loads(p_resp.read().decode("utf-8"))
-                    status = status_data.get("status", "").lower()
-                    if status in ("succeeded", "completed"):
-                        dl_url = status_data.get("video_url") or status_data.get("output", {}).get("url")
+                    status = str(status_data.get("status", "")).lower()
+                    if status in ("succeeded", "completed", "done", "success"):
+                        dl_url = status_data.get("video_url") or status_data.get("url") or status_data.get("output", {}).get("url")
                         if not dl_url:
                             raise RuntimeError(f"Completed task missing download URL: {status_data}")
                         self._download(dl_url, output_path)

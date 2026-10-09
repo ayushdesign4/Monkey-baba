@@ -4,15 +4,15 @@ import json
 import urllib.request
 from pathlib import Path
 from typing import Optional
-from src.config import AGNES_API_KEY
+from src.config import AGNES_API_KEY, AGNES_BASE_URL
 from src.utils.logging import log
 
 class AgnesImageProvider:
     name = "agnes"
 
-    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://api.agnes.ai/v1"):
+    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None):
         self.api_key = api_key or AGNES_API_KEY
-        self.base_url = base_url.rstrip("/")
+        self.base_url = (base_url or AGNES_BASE_URL).rstrip("/")
 
     def is_configured(self) -> bool:
         return bool(self.api_key and len(self.api_key) > 4)
@@ -26,7 +26,7 @@ class AgnesImageProvider:
         payload = {
             "prompt": prompt,
             "size": "1080x1920",
-            "model": "agnes-image-hd"
+            "model": "agnes-image-2.1-flash"
         }
 
         req = urllib.request.Request(
@@ -34,7 +34,8 @@ class AgnesImageProvider:
             data=json.dumps(payload).encode("utf-8"),
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.api_key}"
+                "Authorization": f"Bearer {self.api_key}",
+                "User-Agent": "Monkey-Baba/1.0"
             },
             method="POST"
         )
