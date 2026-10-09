@@ -1,0 +1,48 @@
+name: Check Groq Models
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-models:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Query Groq Models API
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python -u -c '
+          import os, json, urllib.request
+
+          key = os.getenv("GROQ_API_KEY", "")
+          if not key:
+              print("GROQ_API_KEY is not set!")
+              exit(1)
+
+          req = urllib.request.Request(
+              "https://api.groq.com/openai/v1/models",
+              headers={
+                  "Authorization": f"Bearer {key}",
+                  "User-Agent": "Monkey-Baba/1.0"
+              }
+          )
+
+          try:
+              with urllib.request.urlopen(req) as resp:
+                  data = json.loads(resp.read().decode("utf-8"))
+                  models = [m["id"] for m in data.get("data", []) if m.get("active", True)]
+                  print("AVAILABLE_GROQ_MODELS:", sorted(models))
+          except Exception as e:
+              err = str(e)
+              if key:
+                  err = err.replace(key, "[REDACTED]")
+              print("ERROR fetching models:", err)
+          '
