@@ -1,1 +1,1 @@
-"""Brain Provider Management (Gemini primary, Groq fallback #1, Backup LLM fallback #2)."""
+"""Brain Provider Management (Gemini primary, Groq fallback #1, Local Python fallback #2)."""

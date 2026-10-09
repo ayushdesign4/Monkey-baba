@@ -35,7 +35,7 @@
               │                        │                        │
          Groq (Llama)              Procedural               Cinematic
               │                   Video Engine            Poster Engine
-         Backup LLM
+         Local Python
               │
               └──────────────┬───────────────┐
                              ▼               │

@@ -11,7 +11,7 @@ def main():
     parser = argparse.ArgumentParser(description="Monkey-Baba Autonomous AI YouTube Shorts Pipeline")
     parser.add_argument("--dry-run", action="store_true", help="Run full pipeline in simulation mode (no charges, simulated upload)")
     parser.add_argument("--topic", type=str, default=None, help="Force a specific topic instead of autonomous ideation")
-    parser.add_argument("--test-brain", action="store_true", help="Test Brain providers (Gemini -> Groq -> Backup)")
+    parser.add_argument("--test-brain", action="store_true", help="Test Brain providers (Gemini -> Groq -> Local Python)")
     parser.add_argument("--status", action="store_true", help="Print recent pipeline history")
 
     args = parser.parse_args()

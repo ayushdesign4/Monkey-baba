@@ -5,7 +5,7 @@ import re
 from typing import Dict, Any, Tuple, Optional
 from src.brain.gemini import GeminiProvider
 from src.brain.groq import GroqProvider
-from src.brain.backup import BackupLLMProvider
+from src.brain.backup import LocalFallbackProvider
 from src.utils.logging import log, log_warn, log_error
 from src.utils.retry import retry_with_backoff
 
@@ -13,14 +13,14 @@ class BrainManager:
     def __init__(self):
         self.primary = GeminiProvider()
         self.fallback_1 = GroqProvider()
-        self.fallback_2 = BackupLLMProvider()
+        self.fallback_2 = LocalFallbackProvider()
         
         self.last_provider_used = None
         self.fallback_used = False
 
     def generate_text(self, prompt: str, system_instruction: str = "") -> Tuple[str, str, bool]:
         """
-        Generate text using Primary (Gemini) -> Fallback #1 (Groq) -> Fallback #2 (Backup).
+        Generate text using Primary (Gemini) -> Fallback #1 (Groq) -> Fallback #2 (Local Python).
         Returns: (text, provider_name, fallback_used)
         """
         # 1. Primary: Gemini
@@ -53,25 +53,21 @@ class BrainManager:
                 self.fallback_used = True
                 return res, "groq", True
             except Exception as e:
-                log_warn("BRAIN", f"Groq failed ({e}). Switching to Fallback #2 (Backup LLM)...")
+                log_warn("BRAIN", f"Groq failed ({e}). Switching to Fallback #2 (Local Python)...")
         else:
             log_warn("BRAIN", "Groq not configured. Skipping to Fallback #2.")
 
-        # 3. Fallback #2: Backup LLM
+        # 3. Fallback #2: Local Python deterministic emergency fallback
         if self.fallback_2.is_configured():
             try:
-                log("FALLBACK", "Calling Fallback #2 Brain Provider: Backup LLM...")
-                res = retry_with_backoff(
-                    lambda: self.fallback_2.generate(prompt, system_instruction),
-                    stage="BRAIN",
-                    max_retries=2
-                )
-                self.last_provider_used = "backup"
+                log("FALLBACK", "Calling Fallback #2 Brain Provider: Local Python...")
+                res = self.fallback_2.generate(prompt, system_instruction)
+                self.last_provider_used = "local"
                 self.fallback_used = True
-                return res, "backup", True
+                return res, "local", True
             except Exception as e:
-                log_error("BRAIN", f"All brain providers failed: {e}")
-                raise RuntimeError(f"All Brain LLM providers failed. Last error: {e}")
+                log_error("BRAIN", f"Local Python fallback failed: {e}")
+                raise RuntimeError(f"All Brain providers failed. Last error: {e}")
 
         raise RuntimeError("No configured Brain providers available. Check GEMINI_API_KEY or GROQ_API_KEY.")
 

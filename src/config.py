@@ -22,7 +22,7 @@ ASPECT_RATIO = "9:16"
 
 # Provider Settings
 PRIMARY_BRAIN_PROVIDER = "gemini"
-FALLBACK_BRAIN_PROVIDERS = ["groq", "backup"]
+FALLBACK_BRAIN_PROVIDERS = ["groq", "local"]
 
 PRIMARY_VIDEO_PROVIDER = "agnes"
 FALLBACK_VIDEO_PROVIDERS = ["fallback"]
@@ -37,10 +37,6 @@ FALLBACK_TTS_PROVIDERS = ["gtts", "offline"]
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 AGNES_API_KEY = os.getenv("AGNES_API_KEY", "")
-
-BACKUP_LLM_API_KEY = os.getenv("BACKUP_LLM_API_KEY", "")
-BACKUP_LLM_BASE_URL = os.getenv("BACKUP_LLM_BASE_URL", "https://api.openai.com/v1")
-BACKUP_LLM_MODEL = os.getenv("BACKUP_LLM_MODEL", "gpt-4o-mini")
 
 # YouTube OAuth
 YOUTUBE_CLIENT_ID = os.getenv("YOUTUBE_CLIENT_ID", "")
