@@ -15,27 +15,33 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Test Candidate Models
+      - name: Test Monkey-Baba Script Generation on Groq
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           python -u -c '
           import os, json, time, urllib.request
+          from src.script.validator import ScriptValidator
+          from src.script.generator import SCRIPT_PROMPT_TEMPLATE
 
           key = os.getenv("GROQ_API_KEY", "")
-          candidates = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]
+          prompt = SCRIPT_PROMPT_TEMPLATE.format(
+              topic="The Bermuda Triangle Mystery",
+              story_summary="Flight 19 and vanishing vessels in the Atlantic.",
+              min_words=100
+          )
 
-          for m in candidates:
-              print(f"\nTesting model: {m}")
+          for model in ["qwen/qwen3.8-27b", "openai/gpt-oss-120b"]:
+              print(f"\n====================================\nTesting Script Generation on {model}...")
               url = "https://api.groq.com/openai/v1/chat/completions"
               payload = {
-                  "model": m,
+                  "model": model,
                   "messages": [
-                      {"role": "system", "content": "You are a helpful assistant. Respond with raw JSON only."},
-                      {"role": "user", "content": "Generate a JSON object with key title and a story of at least 110 words about space exploration."}
+                      {"role": "system", "content": "You are an award-winning YouTube Shorts narrative director. Respond ONLY with valid, unescaped raw JSON."},
+                      {"role": "user", "content": prompt}
                   ],
                   "temperature": 0.7,
-                  "max_tokens": 1024
+                  "max_tokens": 2048
               }
               req = urllib.request.Request(
                   url,
@@ -49,12 +55,22 @@ jobs:
               )
               t0 = time.time()
               try:
-                  with urllib.request.urlopen(req, timeout=30) as resp:
+                  with urllib.request.urlopen(req, timeout=40) as resp:
                       res = json.loads(resp.read().decode("utf-8"))
-                      text = res["choices"][0]["message"]["content"]
+                      content = res["choices"][0]["message"]["content"].strip()
                       el = time.time() - t0
-                      print(f"SUCCESS ({m}): Latency={el:.2f}s, Len={len(text.split())} words")
-                      print(f"Sample: {text[:150]}")
+                      # strip code block if any
+                      if "```" in content:
+                          import re
+                          m = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", content)
+                          content = m.group(1).strip() if m else content
+                      parsed = json.loads(content)
+                      is_valid, msg = ScriptValidator.validate(parsed)
+                      print(f"MODEL: {model}")
+                      print(f"LATENCY: {el:.2f}s")
+                      print(f"VALID_SCRIPT: {is_valid} (Reason: {msg})")
+                      print(f"WORD_COUNT: {parsed.get('word_count')}")
+                      print(f"SCENE_COUNT: {len(parsed.get('scenes', []))}")
               except Exception as e:
-                  print(f"FAIL ({m}): {e}")
+                  print(f"FAILED on {model}: {e}")
           '
