@@ -77,6 +77,11 @@ class VisualQualityGate:
             sample_duration = duration
 
         frame_stats = cls.inspect_sample_frames(video_path, sample_duration, num_sample_frames)
+        if shutil.which("ffmpeg") and not frame_stats:
+            raise VisualQualityError(
+                f"Visual Quality Gate Failed: Unable to extract or decode any visual frames from '{video_path.name}'. Video stream may be corrupt or broken."
+            )
+
         if frame_stats:
             black_frames = 0
             low_detail_frames = 0

@@ -126,5 +126,18 @@ class TestVisualQualityGate(unittest.TestCase):
         with self.assertRaises(VisualQualityError):
             uploader.upload_short(broken_video, metadata, dry_run=True)
 
+    def test_corrupt_video_failing_frame_extraction_rejected(self):
+        """Verify that when ffmpeg cannot extract any frames, quality gate rejects video."""
+        dummy_video = self.tmp_path / "corrupt.mp4"
+        dummy_video.write_bytes(b"0" * 60_000)
+
+        meta = {"duration": 45.0, "width": 1080, "height": 1920}
+        with patch("shutil.which", return_value="/usr/bin/ffmpeg"), \
+             patch.object(VisualQualityGate, "inspect_metadata", return_value=meta), \
+             patch.object(VisualQualityGate, "inspect_sample_frames", return_value=[]):
+            with self.assertRaises(VisualQualityError) as ctx:
+                VisualQualityGate.validate_or_raise(dummy_video)
+            self.assertIn("unable to extract or decode any visual frames", str(ctx.exception).lower())
+
 if __name__ == "__main__":
     unittest.main()

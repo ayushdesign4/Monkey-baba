@@ -29,5 +29,17 @@ class FallbackThumbnailProvider:
             str(output_path)
         ]
 
-        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-        return output_path
+        try:
+            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+            return output_path
+        except Exception:
+            # Resilient PIL fallback for cross-platform reliability without ffmpeg
+            from PIL import Image, ImageDraw
+            # Convert hex colors to RGB tuples
+            r1, g1, b1 = int(c1[2:4], 16), int(c1[4:6], 16), int(c1[6:8], 16)
+            r2, g2, b2 = int(c2[2:4], 16), int(c2[4:6], 16), int(c2[6:8], 16)
+            im = Image.new("RGB", (VIDEO_WIDTH, VIDEO_HEIGHT), color=(r1, g1, b1))
+            draw = ImageDraw.Draw(im)
+            draw.rectangle([0, int(VIDEO_HEIGHT * 0.25), VIDEO_WIDTH, int(VIDEO_HEIGHT * 0.75)], fill=(r2, g2, b2))
+            im.save(output_path, "JPEG", quality=90)
+            return output_path

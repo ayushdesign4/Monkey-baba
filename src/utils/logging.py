@@ -27,7 +27,11 @@ def log(stage: str, message: str, level: str = "INFO"):
     now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
     clean_msg = mask_secrets(message)
     formatted = f"[{now}] [{level}] [{stage.upper()}] {clean_msg}"
-    print(formatted, flush=True)
+    try:
+        print(formatted, flush=True)
+    except UnicodeEncodeError:
+        encoding = sys.stdout.encoding or "ascii"
+        print(formatted.encode(encoding, errors="replace").decode(encoding), flush=True)
 
 def log_error(stage: str, message: str):
     """Log an error."""
