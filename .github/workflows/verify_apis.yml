@@ -90,7 +90,8 @@ jobs:
 
           try:
               script_data, s_provider, s_fallback = mgr.generate_json("Master Storyteller Topic: The Lost Tomb min_words: 100")
-              print(f"CHAIN_JSON_STATUS: PASS (Provider={s_provider}, Scenes={len(script_data.get(\"scenes\", []))})")
+              num_scenes = len(script_data.get("scenes", []))
+              print(f"CHAIN_JSON_STATUS: PASS (Provider={s_provider}, Scenes={num_scenes})")
           except Exception as e:
               print(f"CHAIN_JSON_STATUS: FAIL ({e})")
 
