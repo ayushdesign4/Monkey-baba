@@ -9,6 +9,7 @@ from src.youtube.auth import get_access_token
 from src.utils.logging import log, log_warn, log_success
 from src.utils.files import read_json, write_json
 from src.config import UPLOADS_FILE
+from src.video.quality_gate import VisualQualityGate
 
 class YouTubeUploader:
     def __init__(self):
@@ -28,6 +29,9 @@ class YouTubeUploader:
         dry_run: bool = False
     ) -> Dict[str, Any]:
         """Upload video to YouTube as a vertical Short."""
+        # Enforce Visual Quality Gate before any upload or simulation
+        VisualQualityGate.validate_or_raise(video_path)
+
         title = metadata.get("title", "Mysterious Discovery #Shorts")
         description = metadata.get("description", "")
         tags = metadata.get("tags", ["Shorts", "Mystery"])

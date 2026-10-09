@@ -19,6 +19,7 @@ from src.editing.finalizer import VideoFinalizer
 from src.editing.audio import get_media_duration
 from src.thumbnail.manager import ThumbnailManager
 from src.metadata.generator import MetadataGenerator
+from src.video.quality_gate import VisualQualityGate
 from src.youtube.uploader import YouTubeUploader
 from src.notifications.email import EmailNotifier
 
@@ -103,7 +104,11 @@ class MonkeyBabaOrchestrator:
             metadata, meta_fallback = self.meta_gen.generate_metadata(topic_record, script_data)
             write_json(run_dir / "metadata.json", metadata)
 
-            # 10. YOUTUBE UPLOAD
+            # 10. VISUAL QUALITY GATE
+            current_stage = "QUALITY_GATE"
+            VisualQualityGate.validate_or_raise(final_video_path)
+
+            # 11. YOUTUBE UPLOAD
             current_stage = "UPLOAD"
             upload_record = self.uploader.upload_short(
                 video_path=final_video_path,

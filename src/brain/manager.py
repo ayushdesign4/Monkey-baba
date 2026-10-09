@@ -27,11 +27,7 @@ class BrainManager:
         if self.primary.is_configured():
             try:
                 log("BRAIN", "Calling Primary Brain Provider: Gemini...")
-                res = retry_with_backoff(
-                    lambda: self.primary.generate(prompt, system_instruction),
-                    stage="BRAIN",
-                    max_retries=2
-                )
+                res = self.primary.generate(prompt, system_instruction)
                 self.last_provider_used = "gemini"
                 self.fallback_used = False
                 return res, "gemini", False

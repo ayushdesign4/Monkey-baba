@@ -1,4 +1,4 @@
-"""Unit tests for Brain providers, headers, retries, and fallback transitions."""
+"""Unit tests for Brain providers, headers, dynamic model discovery, retries, and fallback transitions."""
 
 import unittest
 import json
@@ -11,6 +11,9 @@ from src.brain.backup import LocalFallbackProvider
 from src.brain.manager import BrainManager
 
 class TestBrainProviders(unittest.TestCase):
+
+    def setUp(self):
+        GeminiProvider.reset_cache()
 
     def test_groq_request_headers(self):
         """Verify GroqProvider sets User-Agent: Monkey-Baba/1.0 and headers correctly."""
@@ -37,14 +40,91 @@ class TestBrainProviders(unittest.TestCase):
             self.assertEqual(captured_req.headers.get("Content-type"), "application/json")
             self.assertIn("Bearer gsk_test", captured_req.headers.get("Authorization", ""))
 
+    def test_gemini_dynamic_model_discovery_and_caching(self):
+        """Verify GeminiProvider queries Models API, filters generateContent, ranks Flash, and caches."""
+        provider = GeminiProvider(api_key="AIzaSyTestKey12345678901234567890")
+
+        api_call_count = 0
+
+        def mock_urlopen(req, timeout=None):
+            nonlocal api_call_count
+            api_call_count += 1
+            mock_resp = MagicMock()
+            mock_resp.__enter__.return_value = mock_resp
+            mock_resp.read.return_value = json.dumps({
+                "models": [
+                    {"name": "models/text-embedding-004", "supportedGenerationMethods": ["embedContent"]},
+                    {"name": "models/gemini-1.5-pro", "supportedGenerationMethods": ["generateContent"]},
+                    {"name": "models/gemini-2.0-flash", "supportedGenerationMethods": ["generateContent"]},
+                    {"name": "models/gemini-2.5-flash", "supportedGenerationMethods": ["generateContent"]},
+                    {"name": "models/imagen-3.0", "supportedGenerationMethods": ["generateImages"]},
+                ]
+            }).encode("utf-8")
+            return mock_resp
+
+        with patch("urllib.request.urlopen", side_effect=mock_urlopen):
+            models = provider.discover_models()
+            # Verified fast Flash models are prioritized and non-text models excluded
+            self.assertIn("gemini-2.5-flash", models)
+            self.assertIn("gemini-2.0-flash", models)
+            self.assertIn("gemini-1.5-pro", models)
+            self.assertNotIn("text-embedding-004", models)
+            self.assertNotIn("imagen-3.0", models)
+            # Flash 2.5 should be ranked before Flash 2.0 and Pro
+            self.assertEqual(models[0], "gemini-2.5-flash")
+            self.assertEqual(models[1], "gemini-2.0-flash")
+
+            # Second call should use cache without hitting API
+            models_cached = provider.discover_models()
+            self.assertEqual(models_cached, models)
+            self.assertEqual(api_call_count, 1)
+
+    def test_gemini_quota_exhausted_failover_to_next_model(self):
+        """Verify HTTP 429 quota exhaustion skips retrying model 1 and immediately tries model 2."""
+        provider = GeminiProvider(api_key="AIzaSyTestKey12345678901234567890")
+        
+        # Pre-seed discovered models
+        GeminiProvider._cached_models = ["gemini-model-primary", "gemini-model-secondary"]
+
+        called_models = []
+
+        def mock_urlopen(req, timeout=None):
+            url = req.full_url
+            mock_resp = MagicMock()
+            mock_resp.__enter__.return_value = mock_resp
+
+            if "gemini-model-primary" in url:
+                called_models.append("primary")
+                fp = MagicMock()
+                fp.read.return_value = b'{"error": {"code": 429, "message": "Resource has been exhausted (e.g. check quota)."}}'
+                raise urllib.error.HTTPError(url, 429, "Too Many Requests", {}, fp)
+            elif "gemini-model-secondary" in url:
+                called_models.append("secondary")
+                mock_resp.read.return_value = json.dumps({
+                    "candidates": [{"content": {"parts": [{"text": "GEMINI_SECONDARY_OK"}]}}]
+                }).encode("utf-8")
+                return mock_resp
+
+            raise RuntimeError("Unexpected URL")
+
+        with patch("urllib.request.urlopen", side_effect=mock_urlopen):
+            res = provider.generate("Test prompt")
+            self.assertEqual(res, "GEMINI_SECONDARY_OK")
+            self.assertEqual(provider.active_model, "gemini-model-secondary")
+            # Primary was called exactly ONCE (zero repeated sleeps), then secondary was called
+            self.assertEqual(called_models, ["primary", "secondary"])
+            self.assertIn("gemini-model-primary", GeminiProvider._exhausted_models)
+
     def test_gemini_retries_transient_error_and_succeeds(self):
         """Verify GeminiProvider retries HTTP 503 and respects backoff before succeeding."""
         provider = GeminiProvider(
             api_key="AIzaSyTestKey12345678901234567890",
+            model="gemini-test-model",
             max_retries=3,
             initial_delay=0.01,
             backoff_factor=1.5
         )
+        GeminiProvider._cached_models = ["gemini-test-model"]
 
         attempts = 0
 
@@ -74,9 +154,11 @@ class TestBrainProviders(unittest.TestCase):
         """Verify GeminiProvider does NOT retry on HTTP 401/403/404/400."""
         provider = GeminiProvider(
             api_key="AIzaSyTestKey12345678901234567890",
+            model="gemini-test-model",
             max_retries=3,
             initial_delay=0.01
         )
+        GeminiProvider._cached_models = ["gemini-test-model"]
 
         attempts = 0
 
@@ -92,6 +174,21 @@ class TestBrainProviders(unittest.TestCase):
                 provider.generate("Test prompt")
             self.assertIn("HTTP 401", str(ctx.exception))
             self.assertEqual(attempts, 1)
+
+    def test_fallback_transitions_to_groq_when_gemini_exhausted(self):
+        """Verify BrainManager transitions: Gemini quota exhausted -> Groq succeeds."""
+        manager = BrainManager()
+        manager.primary.is_configured = MagicMock(return_value=True)
+        manager.fallback_1.is_configured = MagicMock(return_value=True)
+
+        # Mock Gemini all models exhausted
+        manager.primary.generate = MagicMock(side_effect=RuntimeError("Gemini HTTP 429 quota exhausted"))
+        manager.fallback_1.generate = MagicMock(return_value="GROQ_RESPONSE")
+        
+        text, provider, fallback_used = manager.generate_text("Test prompt")
+        self.assertEqual(text, "GROQ_RESPONSE")
+        self.assertEqual(provider, "groq")
+        self.assertTrue(fallback_used)
 
     def test_fallback_transitions_to_groq_and_local(self):
         """Verify BrainManager transitions: Gemini fails -> Groq fails -> Local Python fallback."""

@@ -2,6 +2,7 @@
 
 import unittest
 import json
+import urllib.error
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 
@@ -61,6 +62,36 @@ class TestAgnesProviders(unittest.TestCase):
         self.assertEqual(submit_req.full_url, "https://apihub.agnes-ai.com/v1/videos")
         self.assertEqual(submit_req.headers.get("User-agent"), "Monkey-Baba/1.0")
         self.assertEqual(submit_req.headers.get("Authorization"), "Bearer sk_test_key_12345")
+
+        sent_payload = json.loads(submit_req.data.decode("utf-8"))
+        self.assertEqual(sent_payload.get("model"), "agnes-video-2.5")
+        self.assertEqual(sent_payload.get("seconds"), "5")
+        self.assertEqual(sent_payload.get("aspect_ratio"), "9:16")
+        self.assertNotIn("duration", sent_payload)
+
+    def test_agnes_http_400_raises_valueerror_and_does_not_retry(self):
+        """Verify HTTP 400 Bad Request raises ValueError and is not retried."""
+        from src.utils.retry import retry_with_backoff
+        v_prov = AgnesVideoProvider(api_key="sk_test_key_12345")
+        attempts = 0
+
+        def mock_urlopen(req, timeout=None):
+            nonlocal attempts
+            attempts += 1
+            fp = MagicMock()
+            fp.read.return_value = b'{"error": "Invalid request parameter"}'
+            raise urllib.error.HTTPError(req.full_url, 400, "Bad Request", {}, fp)
+
+        out_path = Path("tests/mock_scene.mp4")
+        with patch("urllib.request.urlopen", side_effect=mock_urlopen):
+            with self.assertRaises(ValueError) as ctx:
+                retry_with_backoff(
+                    lambda: v_prov.generate_clip("Prompt", out_path, duration_seconds=5),
+                    stage="VIDEO",
+                    max_retries=3
+                )
+            self.assertIn("HTTP 400 Bad Request", str(ctx.exception))
+            self.assertEqual(attempts, 1)  # Strictly 1 attempt, zero retries!
 
     def test_image_generation_request_format(self):
         """Verify image generation sends POST to /images/generations with correct headers."""

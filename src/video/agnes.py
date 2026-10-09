@@ -28,11 +28,13 @@ class AgnesVideoProvider:
             raise ValueError("AGNES_API_KEY is not configured.")
 
         url = f"{self.base_url}/videos"
+        # Official Agnes API requires 'seconds' (string in range 4-12, default 5 or 6)
+        valid_seconds = str(max(4, min(12, int(duration_seconds))))
         payload = {
+            "model": "agnes-video-2.5",
             "prompt": prompt,
-            "aspect_ratio": "9:16",
-            "duration": duration_seconds,
-            "model": "agnes-video-2.5"
+            "seconds": valid_seconds,
+            "aspect_ratio": "9:16"
         }
 
         req = urllib.request.Request(
@@ -51,9 +53,19 @@ class AgnesVideoProvider:
                 data = json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             err = e.read().decode("utf-8", errors="ignore")
-            raise RuntimeError(f"Agnes HTTP {e.code}: {err}")
+            if self.api_key and self.api_key in err:
+                err = err.replace(self.api_key, "[REDACTED]")
+            clean_err = err.strip()[:200]
+            if e.code == 400:
+                raise ValueError(f"Agnes HTTP 400 Bad Request: {clean_err}")
+            raise RuntimeError(f"Agnes HTTP {e.code}: {clean_err}")
+        except ValueError:
+            raise
         except Exception as e:
-            raise RuntimeError(f"Agnes submission failed: {e}")
+            err_msg = str(e)
+            if self.api_key and self.api_key in err_msg:
+                err_msg = err_msg.replace(self.api_key, "[REDACTED]")
+            raise RuntimeError(f"Agnes submission failed: {err_msg[:200]}")
 
         task_id = data.get("video_id") or data.get("id") or data.get("task_id")
         video_url = data.get("video_url") or data.get("url")

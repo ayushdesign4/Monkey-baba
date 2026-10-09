@@ -32,7 +32,7 @@ def retry_with_backoff(
             return fn()
         except allowed_exceptions as exc:
             last_exception = exc
-            if not is_retryable_error(exc) and attempt > 1:
+            if not is_retryable_error(exc):
                 log("RETRY", f"Non-retryable error encountered: {exc}", level="WARN")
                 raise exc
             
