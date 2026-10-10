@@ -124,5 +124,33 @@
     "status": "reserved",
     "youtube_video_id": null,
     "youtube_url": null
+  },
+  {
+    "topic_id": "topic_20261010_071847_5306",
+    "normalized_topic": "test unique story of the foggy lake 999",
+    "topic_title": "Test Unique Story of the Foggy Lake 999",
+    "topic_summary": "A traveler sees strange green lights floating above an icy lake.",
+    "story_fingerprint": "737424de63cd433941c4746a92650900f5b82f0311d84d125794ed59cd4e554f",
+    "key_entities": [],
+    "story_type": "horror",
+    "created_at_utc": "2026-10-10T07:18:47.189064+00:00",
+    "run_id": "test_run",
+    "status": "reserved",
+    "youtube_video_id": null,
+    "youtube_url": null
+  },
+  {
+    "topic_id": "topic_20261010_071847_1590",
+    "normalized_topic": "a lake where the water remains unnaturally still even during thunderstorms",
+    "topic_title": "a lake where the water remains unnaturally still even during thunderstorms",
+    "topic_summary": "",
+    "story_fingerprint": "a1db137244f8072d6f5393e8ffa00d10df006db54a65bb7dbe15c17293d31f6a",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-10T07:18:47.465261+00:00",
+    "run_id": "38033958835",
+    "status": "uploaded",
+    "youtube_video_id": "-Kq9c5PXAR4",
+    "youtube_url": "https://www.youtube.com/watch?v=-Kq9c5PXAR4"
   }
 ]

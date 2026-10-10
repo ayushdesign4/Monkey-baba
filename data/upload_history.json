@@ -46,5 +46,22 @@
     "status": "uploaded",
     "dry_run": false,
     "notification_status": "sent"
+  },
+  {
+    "video_id": "-Kq9c5PXAR4",
+    "video_url": "https://www.youtube.com/watch?v=-Kq9c5PXAR4",
+    "title": "The Antique Mirror That Blinks Late #Shorts",
+    "topic_id": "topic_20261010_071847_1590",
+    "story_fingerprint": "a1db137244f8072d6f5393e8ffa00d10df006db54a65bb7dbe15c17293d31f6a",
+    "video_sha256": "80fe734e03130b5ded0895fc8614e870e8ebea77d601a40cb90dc7ed874cefdf",
+    "duration_seconds": 51.5,
+    "language": "en",
+    "niche": "horror storytelling",
+    "uploaded_at_utc": "2026-10-10T07:19:31.226340+00:00",
+    "run_id": "38033958835",
+    "status": "uploaded",
+    "dry_run": false,
+    "notification_status": "sent",
+    "notification_sent_at_utc": "2026-10-10T07:19:32.962172+00:00"
   }
 ]

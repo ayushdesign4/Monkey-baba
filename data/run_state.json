@@ -1,0 +1,12 @@
+{
+  "run_id": "38033958835",
+  "channel": "horror",
+  "started_at_utc": "20261010_071847",
+  "finished_at_utc": "2026-10-10T07:19:32.962589+00:00",
+  "stage": "completed",
+  "status": "success",
+  "topic_id": "topic_20261010_071847_1590",
+  "video_id": "-Kq9c5PXAR4",
+  "upload_status": "uploaded",
+  "video_path": "/home/runner/work/Monkey-baba/Monkey-baba/output/runs/horror_20261010_071847/short_horror.mp4"
+}
