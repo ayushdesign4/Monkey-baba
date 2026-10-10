@@ -1,12 +1,10 @@
 {
-  "run_id": "38033958835",
+  "run_id": "38037657071",
   "channel": "horror",
-  "started_at_utc": "20261010_071847",
-  "finished_at_utc": "2026-10-10T07:19:32.962589+00:00",
-  "stage": "completed",
-  "status": "success",
-  "topic_id": "topic_20261010_071847_1590",
-  "video_id": "-Kq9c5PXAR4",
-  "upload_status": "uploaded",
-  "video_path": "/home/runner/work/Monkey-baba/Monkey-baba/output/runs/horror_20261010_071847/short_horror.mp4"
+  "finished_at_utc": "2026-10-10T08:23:41.503671+00:00",
+  "stage": "failed",
+  "status": "failed",
+  "topic_id": "topic_20261010_082328_9581",
+  "dry_run": true,
+  "last_error_summary": "Visual Quality Policy Violation: Procedural placeholders were used for scenes [2, 3, 4, 5, 6] because AI visual generation failed. Public upload is blocked to prevent uploading placeholder videos. To permit procedural visual placeholders, set ALLOW_PROCEDURAL_FALLBACK=true or pass --allow-procedural"
 }
