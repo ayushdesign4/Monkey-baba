@@ -180,5 +180,19 @@
     "status": "failed",
     "youtube_video_id": null,
     "youtube_url": null
+  },
+  {
+    "topic_id": "topic_20261010_091820_8651",
+    "normalized_topic": "a night train conductor who checks tickets of passengers who never boarded",
+    "topic_title": "a night train conductor who checks tickets of passengers who never boarded",
+    "topic_summary": "",
+    "story_fingerprint": "97ce244ca4eb0cae6e04be4365c0dbbd4d7928cc24bcfe4520b0ee5f06de0bc9",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-10T09:18:20.934907+00:00",
+    "run_id": "38040870166",
+    "status": "uploaded",
+    "youtube_video_id": "jITfXQDgLvU",
+    "youtube_url": "https://www.youtube.com/watch?v=jITfXQDgLvU"
   }
 ]

@@ -63,5 +63,22 @@
     "dry_run": false,
     "notification_status": "sent",
     "notification_sent_at_utc": "2026-10-10T07:19:32.962172+00:00"
+  },
+  {
+    "video_id": "jITfXQDgLvU",
+    "video_url": "https://www.youtube.com/watch?v=jITfXQDgLvU",
+    "title": "A Night Train Conductor Who Checks Tickets Of Passengers Who Never Boarded #Shorts",
+    "topic_id": "topic_20261010_091820_8651",
+    "story_fingerprint": "97ce244ca4eb0cae6e04be4365c0dbbd4d7928cc24bcfe4520b0ee5f06de0bc9",
+    "video_sha256": "35c0aa2c66141bd324612f0ebf9c3a553dc2b9ff48f73ba1f45157e81c6dbdbc",
+    "duration_seconds": 42.0,
+    "language": "en",
+    "niche": "horror storytelling",
+    "uploaded_at_utc": "2026-10-10T09:21:33.281656+00:00",
+    "run_id": "38040870166",
+    "status": "uploaded",
+    "dry_run": false,
+    "notification_status": "sent",
+    "notification_sent_at_utc": "2026-10-10T09:21:34.481561+00:00"
   }
 ]

@@ -1,10 +1,23 @@
 {
-  "run_id": "38039186093",
+  "run_id": "38040870166",
   "channel": "horror",
-  "finished_at_utc": "2026-10-10T08:53:22.758479+00:00",
-  "stage": "failed",
-  "status": "failed",
-  "topic_id": "topic_20261010_084942_7364",
-  "dry_run": true,
-  "last_error_summary": "Visual quality gate failed: Video duration 67.8s exceeds maximum 60.0s"
+  "started_at_utc": "20261010_091820",
+  "finished_at_utc": "2026-10-10T09:21:34.482101+00:00",
+  "stage": "completed",
+  "status": "success",
+  "topic_id": "topic_20261010_091820_8651",
+  "video_id": "jITfXQDgLvU",
+  "upload_status": "uploaded",
+  "dry_run": false,
+  "script_provider": "deterministic_local_fallback",
+  "script_model": "local_adaptive",
+  "scene_manifest": {
+    "1": "pollinations (openai/gpt-image-1-mini)",
+    "2": "pollinations (openai/gpt-image-1-mini)",
+    "3": "pollinations (openai/gpt-image-1-mini)",
+    "4": "pollinations (openai/gpt-image-1-mini)",
+    "5": "pollinations (openai/gpt-image-1-mini)",
+    "6": "pollinations (openai/gpt-image-1-mini)"
+  },
+  "video_path": "/home/runner/work/Monkey-baba/Monkey-baba/output/runs/horror_20261010_091820/short_horror.mp4"
 }
