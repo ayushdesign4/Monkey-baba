@@ -1,10 +1,10 @@
 {
-  "run_id": "38037657071",
+  "run_id": "38039186093",
   "channel": "horror",
-  "finished_at_utc": "2026-10-10T08:23:41.503671+00:00",
+  "finished_at_utc": "2026-10-10T08:53:22.758479+00:00",
   "stage": "failed",
   "status": "failed",
-  "topic_id": "topic_20261010_082328_9581",
+  "topic_id": "topic_20261010_084942_7364",
   "dry_run": true,
-  "last_error_summary": "Visual Quality Policy Violation: Procedural placeholders were used for scenes [2, 3, 4, 5, 6] because AI visual generation failed. Public upload is blocked to prevent uploading placeholder videos. To permit procedural visual placeholders, set ALLOW_PROCEDURAL_FALLBACK=true or pass --allow-procedural"
+  "last_error_summary": "Visual quality gate failed: Video duration 67.8s exceeds maximum 60.0s"
 }

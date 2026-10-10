@@ -166,5 +166,19 @@
     "status": "failed",
     "youtube_video_id": null,
     "youtube_url": null
+  },
+  {
+    "topic_id": "topic_20261010_084942_7364",
+    "normalized_topic": "a childhood diary with entries in your handwriting dated ten years in the future",
+    "topic_title": "a childhood diary with entries in your handwriting dated ten years in the future",
+    "topic_summary": "",
+    "story_fingerprint": "37c8657a9669ea27bae0232e1010dd80c9bfb2b9f87907d2d18a58b5dc29311b",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-10T08:49:42.225966+00:00",
+    "run_id": "38039186093",
+    "status": "failed",
+    "youtube_video_id": null,
+    "youtube_url": null
   }
 ]
