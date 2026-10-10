@@ -112,7 +112,15 @@ def adjust_audio_tempo_if_needed(
     Scales sentence_timings proportionally to guarantee subtitle synchronization.
     """
     audio_path = Path(audio_path)
-    current_dur = _ffprobe_duration(audio_path)
+    fallback_hint = 0.0
+    if sentence_timings:
+        last_s = sentence_timings[-1]
+        if isinstance(last_s, dict):
+            if "offset_ms" in last_s and "duration_ms" in last_s:
+                fallback_hint = (last_s["offset_ms"] + last_s["duration_ms"]) / 1000.0
+            elif "end" in last_s:
+                fallback_hint = float(last_s["end"])
+    current_dur = _ffprobe_duration(audio_path, fallback_duration=fallback_hint)
     if not sentence_timings and current_dur <= 0:
         return current_dur, sentence_timings
 
@@ -136,16 +144,21 @@ def adjust_audio_tempo_if_needed(
     if abs(factor - 1.0) < 0.01:
         return current_dur, sentence_timings
 
+    def _scale_timing(s: dict) -> dict:
+        out = dict(s)
+        if "offset_ms" in out:
+            out["offset_ms"] = int(out["offset_ms"] / factor)
+        if "duration_ms" in out:
+            out["duration_ms"] = int(out["duration_ms"] / factor)
+        if "start" in out:
+            out["start"] = out["start"] / factor
+        if "end" in out:
+            out["end"] = out["end"] / factor
+        return out
+
     # If ffmpeg is absent on the host, scale timings mathematically
     if not shutil.which("ffmpeg"):
-        adjusted_timings = [
-            SentenceTiming(
-                text=s["text"],
-                offset_ms=int(s["offset_ms"] / factor),
-                duration_ms=int(s["duration_ms"] / factor),
-            )
-            for s in sentence_timings
-        ]
+        adjusted_timings = [_scale_timing(s) for s in sentence_timings]
         new_dur = current_dur / factor
         print(f"   [AUDIO PACING] Timing scaled by {factor:.2f}x: {current_dur:.1f}s -> {new_dur:.1f}s (ffmpeg absent)")
         return new_dur, adjusted_timings
@@ -174,14 +187,7 @@ def adjust_audio_tempo_if_needed(
             tmp_out.unlink(missing_ok=True)
 
     # Scale sentence timings proportionally so captions stay frame-accurate and synchronized
-    adjusted_timings = [
-        SentenceTiming(
-            text=s["text"],
-            offset_ms=int(s["offset_ms"] / factor),
-            duration_ms=int(s["duration_ms"] / factor),
-        )
-        for s in sentence_timings
-    ]
+    adjusted_timings = [_scale_timing(s) for s in sentence_timings]
 
     print(f"   [AUDIO PACING] Tempo adjusted by {factor:.2f}x: {current_dur:.1f}s -> {new_dur:.1f}s (subtitles rescaled)")
     return new_dur, adjusted_timings
