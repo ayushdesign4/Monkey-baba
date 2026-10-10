@@ -1,0 +1,50 @@
+[
+  {
+    "video_id": "sim_42972a63",
+    "video_url": "https://youtube.com/shorts/sim_42972a63",
+    "title": "The Unexplained Mystery of The Deepest Hole on Earth and the Sound They Buried #Shorts",
+    "topic_id": "legacy",
+    "story_fingerprint": "",
+    "video_sha256": "",
+    "duration_seconds": 45,
+    "language": "en",
+    "niche": "horror",
+    "uploaded_at_utc": "2026-10-10T06:42:13.471655+00:00",
+    "run_id": "legacy_migration",
+    "status": "simulated",
+    "dry_run": true,
+    "notification_status": "skipped"
+  },
+  {
+    "video_id": "sim_dcafcb82",
+    "video_url": "https://youtube.com/shorts/sim_dcafcb82",
+    "title": "The Sunken Obelisk That Bends Time 🌊 #Shorts",
+    "topic_id": "legacy",
+    "story_fingerprint": "",
+    "video_sha256": "",
+    "duration_seconds": 45,
+    "language": "en",
+    "niche": "horror",
+    "uploaded_at_utc": "2026-10-10T06:42:13.471655+00:00",
+    "run_id": "legacy_migration",
+    "status": "simulated",
+    "dry_run": true,
+    "notification_status": "skipped"
+  },
+  {
+    "video_id": "NBdHTwzkNL4",
+    "video_url": "https://youtube.com/shorts/NBdHTwzkNL4",
+    "title": "Hidden Pyramid Beneath Sahara: Desert's Secret Tomb #Shorts",
+    "topic_id": "legacy",
+    "story_fingerprint": "",
+    "video_sha256": "",
+    "duration_seconds": 45,
+    "language": "en",
+    "niche": "horror",
+    "uploaded_at_utc": "2026-10-10T06:42:13.471655+00:00",
+    "run_id": "legacy_migration",
+    "status": "uploaded",
+    "dry_run": false,
+    "notification_status": "sent"
+  }
+]

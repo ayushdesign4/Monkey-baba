@@ -25,6 +25,8 @@ output/
 *.png
 *.webp
 !data/sample_*.jpg
+!data/*.json
+
 
 # Distribution / packaging
 build/
