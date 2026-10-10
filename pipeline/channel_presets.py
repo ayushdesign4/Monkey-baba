@@ -336,6 +336,7 @@ PRESETS: dict[str, ChannelPreset] = {
         "audience": "broad English-speaking horror audience",
         "narration": "clear English voiceover",
         "tts_voice": "en-US-ChristopherNeural",
+        "tts_rate": "+10%",
         "caption_font": "CreepsterCaps.ttf",
         "caption_font_name": "Creepster",
         "metadata_language": "en",
@@ -344,8 +345,8 @@ PRESETS: dict[str, ChannelPreset] = {
             "You write chilling, atmospheric English horror storytelling Shorts for YouTube. "
             "STRUCTURE: Hook within the first 1-3 seconds that stops scrolling, steadily escalating dread, "
             "an unsettling revelation or chilling twist, and a memorable lingering ending. "
-            "CRITICAL LENGTH RULE: full_narration MUST be at least 100 English words (target 115-145 words) "
-            "to achieve 35-50 seconds of spoken narration. Natural spoken English — no segment markers, no hashtags in narration. "
+            "CRITICAL LENGTH RULE: full_narration MUST be strictly between 105 and 125 English words (never fewer than 100, never more than 130 words) "
+            "to achieve an exact 42-52 seconds of spoken narration. Natural spoken English — no segment markers, no hashtags in narration. "
             "TONE: Suspenseful, cinematic, eerie, emotionally engaging. Original fictional characters and settings. "
             "PG-13: Creepy and terrifying through atmosphere, pacing, and psychological dread, NOT graphic gore or slasher violence. "
             "Do NOT make false claims of 'real footage' or 'true story' for fictional stories. "

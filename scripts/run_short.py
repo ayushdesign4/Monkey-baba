@@ -46,7 +46,7 @@ load_dotenv(REPO_ROOT / "scripts" / ".env")
 
 from pipeline.captions import build_srt
 from pipeline.channel_presets import get_preset, list_channel_ids
-from pipeline.edge_tts_synth import synthesize_full
+from pipeline.edge_tts_synth import adjust_audio_tempo_if_needed, synthesize_full
 from pipeline.email_notifier import send_pipeline_failure_email, send_upload_success_email
 from pipeline.groq_script import generate_short_pack
 from pipeline.images import (
@@ -222,11 +222,20 @@ def run_pipeline(
         print("\n[STAGE 4] Synthesizing voiceover narration with Edge TTS...")
         audio_path = run_dir / "voiceover.mp3"
         voice = preset.get("tts_voice") or os.environ.get("EDGE_TTS_VOICE") or "en-US-ChristopherNeural"
-        total_dur, sentence_timings = synthesize_full(narration, audio_path, voice=voice)
-        print(f"   Audio duration: {total_dur:.1f}s ({len(sentence_timings)} sentences tracked)")
+        rate = preset.get("tts_rate") or os.environ.get("EDGE_TTS_RATE", "+10%")
+        total_dur, sentence_timings = synthesize_full(narration, audio_path, voice=voice, rate=rate)
+        print(f"   Raw audio duration: {total_dur:.1f}s ({len(sentence_timings)} sentences tracked)")
 
-        if not (30.0 <= total_dur <= 58.0):
-            print(f"   [WARN] Audio duration is {total_dur:.1f}s; target is 30-55s")
+        # Enforce bounded duration (45-55s target, strictly 30-58s) with atempo adjustment if needed
+        total_dur, sentence_timings = adjust_audio_tempo_if_needed(
+            audio_path,
+            sentence_timings,
+            min_target=45.0,
+            max_target=55.0,
+            absolute_max=58.0,
+            absolute_min=30.0,
+        )
+        print(f"   Final narration duration: {total_dur:.1f}s")
 
         stages_passed.append("TTS Narration")
 

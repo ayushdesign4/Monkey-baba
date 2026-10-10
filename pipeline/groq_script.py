@@ -158,15 +158,13 @@ def generate_adaptive_horror_story(topic: str) -> dict[str, Any]:
     title = f"{clean_topic.title()[:80]} #Shorts"
     desc = f"An unsettling mystery surrounding {clean_topic}. Some secrets should remain buried. #HorrorShorts #ScaryStories #Shorts"
     narration = (
-        f"For decades, locals spoke in hushed whispers about {clean_topic}. "
-        f"Most dismissed it as an old superstition until a curious traveler decided to document the truth for himself. "
-        f"Armed with a handheld recorder and flashlight, he arrived late at night as an unnatural mist began rolling in. "
-        f"At first, the area appeared completely deserted, but the silence was suffocating, with not a single insect or night bird making a sound. "
-        f"Then, without warning, the surroundings shifted. A deep, rhythmic vibration hummed through the soil, "
-        f"and the temperature plummeted instantly. Staring through the fog at {clean_topic}, he noticed distinct shadowy silhouettes "
-        f"emerging from the darkness, standing perfectly motionless in the dim moonlight. "
-        f"When he shone his flashlight directly at them, pale golden eyes reflected in the beam, and every figure slowly raised an arm to point behind him. "
-        f"Trembling, he realized the terror wasn't waiting in the distance; it was breathing right against the back of his neck."
+        f"For decades, locals avoided {clean_topic}, warning that anyone who ventured close vanished without a trace. "
+        f"Determined to uncover the truth, a lonely traveler arrived at midnight as a thick, freezing mist rolled in. "
+        f"At first, the darkness seemed empty, but the silence was suffocating, devoid of any natural sound. "
+        f"Suddenly, the ground began to tremble, and a shadowy silhouette materialized from the gloom. "
+        f"When his trembling flashlight illuminated the fog, two glowing yellow eyes stared back through the dark. "
+        f"The figure slowly raised a pale hand, pointing not at him, but directly behind him. "
+        f"Freezing in terror, he felt cold breath against his neck."
     )
     image_prompts = [
         f"Cinematic wide establishing shot of {clean_topic} surrounded by dense eerie fog at twilight, 9:16 vertical composition, dark ominous sky",
