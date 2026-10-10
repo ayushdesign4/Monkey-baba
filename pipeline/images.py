@@ -111,20 +111,28 @@ def _deapi_generate(
         raise RuntimeError(f"DeAPI timed out after {max_polls} polls for {request_id}")
 
 
+class VisualQualityPolicyError(RuntimeError):
+    """Raised when visual assets fail the visual quality policy (e.g. only procedural placeholders generated)."""
+    pass
+
+
+HF_CANDIDATE_MODELS = [
+    os.environ.get("HF_IMAGE_MODEL", "black-forest-labs/FLUX.1-schnell"),
+    "black-forest-labs/FLUX.1-schnell",
+    "stabilityai/stable-diffusion-xl-base-1.0",
+    "runwayml/stable-diffusion-v1-5",
+]
+
+
 def _hf_generate(
     prompt: str,
     *,
     api_key: str,
     width: int,
     height: int,
-    model: str = DEFAULT_HF_MODEL,
-) -> bytes:
-    """Generate image via Hugging Face Inference API / Router."""
-    # Try the Hugging Face router first, then direct api-inference endpoint
-    endpoints = [
-        f"https://router.huggingface.co/hf-inference/models/{model}",
-        f"https://api-inference.huggingface.co/models/{model}",
-    ]
+    model: str | None = None,
+) -> tuple[bytes, str]:
+    """Generate image via Hugging Face Serverless Router API."""
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -137,23 +145,35 @@ def _hf_generate(
         },
     }
 
+    models_to_try = [model] if model else HF_CANDIDATE_MODELS
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    unique_models: list[str] = []
+    for m in models_to_try:
+        if m and m not in seen:
+            seen.add(m)
+            unique_models.append(m)
+
     last_err = ""
     with httpx.Client(timeout=45.0) as client:
-        for url in endpoints:
+        for m_name in unique_models:
+            url = f"https://router.huggingface.co/hf-inference/models/{m_name}"
             try:
                 resp = client.post(url, json=payload, headers=headers)
                 if resp.status_code == 200 and resp.headers.get("content-type", "").startswith("image/"):
-                    return resp.content
+                    return resp.content, m_name
                 if resp.status_code == 503 and "estimated_time" in resp.text:
-                    time.sleep(10.0)
+                    time.sleep(8.0)
                     resp = client.post(url, json=payload, headers=headers)
                     if resp.status_code == 200 and resp.headers.get("content-type", "").startswith("image/"):
-                        return resp.content
-                last_err = f"HTTP {resp.status_code}: {resp.text[:120]}"
+                        return resp.content, m_name
+                last_err = f"Model '{m_name}' HTTP {resp.status_code}: {resp.text[:100]}"
             except Exception as e:
-                last_err = str(e)
+                # Sanitize error message to prevent token leakage
+                safe_err = str(e).replace(api_key, "[REDACTED]")
+                last_err = f"Model '{m_name}' error: {safe_err}"
 
-    raise RuntimeError(f"HuggingFace inference failed: {last_err}")
+    raise RuntimeError(f"Hugging Face inference failed across models. Last error: {last_err}")
 
 
 def _pollinations_generate(
@@ -162,17 +182,38 @@ def _pollinations_generate(
     width: int,
     height: int,
 ) -> bytes:
-    """Keyless zero-cost image generation via Pollinations AI."""
+    """Image generation via Pollinations AI. Treats HTTP 402 as a provider failure."""
     safe_prompt = urllib.parse.quote(prompt[:400])
     seed = random.randint(1, 999999)
     url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width={width}&height={height}&seed={seed}&nologo=true&enhance=false"
 
     with httpx.Client(timeout=30.0, follow_redirects=True) as client:
         resp = client.get(url)
-        resp.raise_for_status()
+        if resp.status_code == 402:
+            raise RuntimeError("Pollinations returned HTTP 402 Payment Required (free quota exhausted/payment required)")
+        if resp.status_code != 200:
+            raise RuntimeError(f"Pollinations returned HTTP {resp.status_code}")
         if not resp.headers.get("content-type", "").startswith("image/") and len(resp.content) < 1000:
             raise RuntimeError(f"Pollinations returned invalid content type: {resp.headers.get('content-type')}")
         return resp.content
+
+
+def validate_visual_quality_policy(
+    scene_manifest: dict[int, str],
+    *,
+    allow_procedural: bool = False,
+) -> None:
+    """Enforce visual quality policy. Blocks public upload if AI visuals failed
+    and only procedural placeholders were generated, unless explicitly permitted.
+    """
+    procedural_scenes = [idx for idx, provider in scene_manifest.items() if provider == "procedural_pil_fallback"]
+    if procedural_scenes and not allow_procedural:
+        raise VisualQualityPolicyError(
+            f"Visual Quality Policy Violation: Procedural placeholders were used for scenes {procedural_scenes} "
+            "because AI visual generation failed. Public upload is blocked to prevent uploading placeholder videos. "
+            "To permit procedural visual placeholders, set ALLOW_PROCEDURAL_FALLBACK=true or pass --allow-procedural-fallback."
+        )
+
 
 
 def _procedural_fallback_generate(
@@ -294,12 +335,15 @@ def save_scene_image(
     hf_token = os.environ.get("HF_TOKEN", "").strip()
     if hf_token:
         try:
-            img_bytes = _hf_generate(prompt, api_key=hf_token, width=width, height=height)
+            img_bytes, hf_model = _hf_generate(prompt, api_key=hf_token, width=width, height=height)
             out_path.write_bytes(img_bytes)
             _validate_image_file(out_path)
-            return "ok", "huggingface"
+            return "ok", f"huggingface ({hf_model})"
         except Exception as e:
-            print(f"[WARN] HuggingFace failed for scene {index}: {e}")
+            # Sanitize error to never expose hf_token
+            safe_e = str(e).replace(hf_token, "[REDACTED]")
+            print(f"[WARN] HuggingFace failed for scene {index}: {safe_e}")
+
 
     # 3. Try Pollinations (free keyless AI generator)
     try:

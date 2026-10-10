@@ -91,11 +91,12 @@ def sample_frames_for_black(video_path: Path, num_frames: int = 5) -> tuple[bool
 def validate_short_quality(
     video_path: Path,
     *,
-    min_duration: float = 25.0,
+    min_duration: float = 30.0,
     max_duration: float = 60.0,
     enforce_vertical: bool = True,
     check_frames: bool = True,
 ) -> QualityGateResult:
+
     """Validate a rendered Short video against all quality gate requirements."""
     video_path = Path(video_path)
     errors: list[str] = []

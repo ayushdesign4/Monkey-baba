@@ -40,12 +40,17 @@ def test_corrupt_history_fail_closed(tmp_path):
         _safe_read_json(bad_file, list)
 
 
-def test_reserve_and_check_duplicate():
+def test_reserve_and_check_duplicate(monkeypatch, tmp_path):
+    temp_topic_file = tmp_path / "topic_history.json"
+    temp_topic_file.write_text("[]", encoding="utf-8")
+    monkeypatch.setattr("pipeline.story_history.TOPIC_HISTORY_PATH", temp_topic_file)
+
     title = "Test Unique Story of the Foggy Lake 999"
     summary = "A traveler sees strange green lights floating above an icy lake."
     
     # First check: not duplicate
     is_dup, _ = check_duplicate(title)
+    assert is_dup is False
     
     # Reserve it
     topic_id = reserve_topic(title, summary, run_id="test_run")

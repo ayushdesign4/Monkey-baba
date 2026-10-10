@@ -152,20 +152,59 @@ FALLBACK_HORROR_STORIES = [
 ]
 
 
+def generate_adaptive_horror_story(topic: str) -> dict[str, Any]:
+    """Dynamically generate a cohesive horror story, title, and scenes tailored to topic."""
+    clean_topic = topic.strip().rstrip(".#")
+    title = f"{clean_topic.title()[:80]} #Shorts"
+    desc = f"An unsettling mystery surrounding {clean_topic}. Some secrets should remain buried. #HorrorShorts #ScaryStories #Shorts"
+    narration = (
+        f"For decades, locals spoke in hushed whispers about {clean_topic}. "
+        f"Most dismissed it as an old superstition until a curious traveler decided to document the truth for himself. "
+        f"Armed with a handheld recorder and flashlight, he arrived late at night as an unnatural mist began rolling in. "
+        f"At first, the area appeared completely deserted, but the silence was suffocating, with not a single insect or night bird making a sound. "
+        f"Then, without warning, the surroundings shifted. A deep, rhythmic vibration hummed through the soil, "
+        f"and the temperature plummeted instantly. Staring through the fog at {clean_topic}, he noticed distinct shadowy silhouettes "
+        f"emerging from the darkness, standing perfectly motionless in the dim moonlight. "
+        f"When he shone his flashlight directly at them, pale golden eyes reflected in the beam, and every figure slowly raised an arm to point behind him. "
+        f"Trembling, he realized the terror wasn't waiting in the distance; it was breathing right against the back of his neck."
+    )
+    image_prompts = [
+        f"Cinematic wide establishing shot of {clean_topic} surrounded by dense eerie fog at twilight, 9:16 vertical composition, dark ominous sky",
+        f"A lonely investigator holding a flashlight and audio recorder approaching {clean_topic} under heavy overcast shadows",
+        f"Atmospheric close-up of the investigator's trembling hand holding the flashlight beam illuminating unnatural signs near {clean_topic}",
+        f"Chilling silhouette figures emerging silently from the cold mist surrounding {clean_topic}, cinematic horror mood",
+        f"Extreme close-up of uncanny glowing golden eyes reflecting in the flashlight beam from pitch darkness",
+        f"Terrifying final reveal showing a towering dark shadow looming immediately behind the investigator near {clean_topic}",
+    ]
+    return {
+        "youtube_title": title,
+        "youtube_description": desc,
+        "full_narration": narration,
+        "image_prompts": image_prompts,
+        "_provider": "deterministic_local_fallback",
+        "_model": "local_adaptive",
+    }
+
+
 def generate_local_fallback(
     preset: ChannelPreset,
     *,
     topic_hint: str | None = None,
 ) -> dict[str, Any]:
     """Deterministic, keyless local emergency fallback generator.
-    Guarantees >=100 words script, 6 scenes in 9:16, title, description.
+    Guarantees >=100 words script, 6 scenes in 9:16, title, description,
+    and STRICT thematic alignment with the provided topic_hint.
     """
-    import hashlib
-
-    # Pick a deterministic story index using hash of topic_hint or time
-    seed = (topic_hint or preset.get("id") or "horror").strip().lower()
-    idx = int(hashlib.sha256(seed.encode()).hexdigest(), 16) % len(FALLBACK_HORROR_STORIES)
-    story = FALLBACK_HORROR_STORIES[idx].copy()
+    if topic_hint and topic_hint.strip():
+        # Generate an adaptive story directly tied to the requested topic
+        story = generate_adaptive_horror_story(topic_hint)
+    else:
+        import hashlib
+        seed = (preset.get("id") or "horror").strip().lower()
+        idx = int(hashlib.sha256(seed.encode()).hexdigest(), 16) % len(FALLBACK_HORROR_STORIES)
+        story = FALLBACK_HORROR_STORIES[idx].copy()
+        story["_provider"] = "deterministic_local_fallback"
+        story["_model"] = "local_static"
 
     # If the preset has variants (e.g. multi-variant), build variants structure
     variants = preset.get("variants") or []
@@ -181,6 +220,8 @@ def generate_local_fallback(
         return {
             "image_prompts": story["image_prompts"],
             "variants": v_dict,
+            "_provider": story.get("_provider", "deterministic_local_fallback"),
+            "_model": story.get("_model", "local"),
         }
 
     return story
@@ -213,14 +254,21 @@ def generate_short_pack(
     if os.environ.get("GROQ_API_KEY", "").strip():
         try:
             if variants:
-                return _generate_multivariant(preset, user, n, variants)
-            return _generate_single(preset, user, n)
+                pack = _generate_multivariant(preset, user, n, variants)
+            else:
+                pack = _generate_single(preset, user, n)
+            pack.setdefault("_provider", "groq")
+            print(f"[SCRIPT_PROVIDER] Generated via Groq ({pack.get('_model', 'model')})")
+            return pack
         except Exception as exc:
             print(f"[WARN] Groq generation failed ({type(exc).__name__}: {exc}). Switching to deterministic local fallback.")
     else:
         print("[INFO] GROQ_API_KEY not set. Using deterministic local Python emergency fallback.")
 
-    return generate_local_fallback(preset, topic_hint=topic_hint)
+    fallback_pack = generate_local_fallback(preset, topic_hint=topic_hint)
+    print(f"[SCRIPT_PROVIDER] Local emergency fallback used ({fallback_pack.get('_model')}). Groq was NOT used.")
+    return fallback_pack
+
 
 
 
@@ -423,6 +471,15 @@ def _assert_multivariant_valid(data: dict[str, Any], variants: list, n: int) -> 
             raise ValueError(f"variants['{lang}'].youtube_title empty")
 
 
+GROQ_CANDIDATE_MODELS = [
+    "llama-3.1-8b-instant",
+    "llama3-70b-8192",
+    "llama3-8b-8192",
+    "mixtral-8x7b-32768",
+    "llama-3.3-70b-versatile",
+]
+
+
 def _call_groq(
     preset: ChannelPreset,
     user: str,
@@ -437,18 +494,49 @@ def _call_groq(
         api_key=api_key,
         default_headers={"User-Agent": "Monkey-Baba/1.0"},
     )
-    resp = client.chat.completions.create(
-        model=GROQ_MODEL,
-        messages=[
-            {"role": "system", "content": preset["groq_system_hint"]},
-            {"role": "user", "content": user},
-        ],
-        temperature=temperature,
-        max_tokens=3072,
-        response_format={"type": "json_object"},
-    )
-    raw = resp.choices[0].message.content
-    if not raw:
-        raise RuntimeError("Empty Groq response")
-    return json.loads(raw)
+
+    preferred = os.environ.get("GROQ_MODEL", "").strip()
+    candidate_list = ([preferred] if preferred else []) + GROQ_CANDIDATE_MODELS
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    models_to_try: list[str] = []
+    for m in candidate_list:
+        if m and m not in seen:
+            seen.add(m)
+            models_to_try.append(m)
+
+    last_exc: Exception | None = None
+    for model_name in models_to_try:
+        try:
+            resp = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": preset["groq_system_hint"]},
+                    {"role": "user", "content": user},
+                ],
+                temperature=temperature,
+                max_tokens=3072,
+                response_format={"type": "json_object"},
+            )
+            raw = resp.choices[0].message.content
+            if not raw:
+                raise RuntimeError(f"Empty Groq response with model {model_name}")
+            data = json.loads(raw)
+            data["_provider"] = "groq"
+            data["_model"] = model_name
+            return data
+        except Exception as exc:
+            err_msg = str(exc)
+            last_exc = exc
+            if "model_not_found" in err_msg or "not found" in err_msg.lower() or "404" in err_msg:
+                print(f"[WARN] Groq model '{model_name}' unavailable (404/not_found). Trying next candidate model...")
+                continue
+            # If rate limit (429) or transient, don't fail immediately, try next model or raise
+            if "429" in err_msg:
+                print(f"[WARN] Groq model '{model_name}' rate limited (429). Trying next candidate model...")
+                continue
+            raise
+
+    raise RuntimeError(f"All Groq candidate models failed. Last error: {last_exc}")
+
 

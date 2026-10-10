@@ -7,16 +7,17 @@ Stages:
   2. Pick topic & enforce duplicate protection
   3. Reserve topic in data/topic_history.json
   4. Generate script (Groq -> deterministic local fallback)
-  5. Validate script structure (>=100 words, 6-8 scenes)
+  5. Validate story consistency (topic <-> title <-> narration <-> scenes)
   6. Generate 9:16 vertical visual assets (DeAPI / HF / Pollinations / PIL)
-  7. Synthesize audio with Edge TTS
-  8. Build captions SRT
-  9. Assemble vertical short with FFmpeg (Ken Burns zoompan + fadeblack)
-  10. Visual Quality Gate validation (aspect ratio, duration, frames)
-  11. Re-check duplicate history before upload
-  12. Upload to YouTube via OAuth2 (if --upload and not --dry-run)
-  13. Save upload history & update topic state
-  14. Send rich SMTP notification email
+  7. Enforce Visual Quality Policy (block upload if procedural placeholders used without flag)
+  8. Synthesize audio with Edge TTS
+  9. Build captions SRT
+  10. Assemble vertical short with FFmpeg (Ken Burns zoompan + fadeblack)
+  11. Visual Quality Gate validation (aspect ratio, duration 30-60s, frames)
+  12. Re-check duplicate history before upload
+  13. Upload to YouTube via OAuth2 (strictly disabled in dry-run mode)
+  14. Save upload history & update topic state
+  15. Send rich SMTP notification email (strictly skipped in dry-run mode)
 """
 from __future__ import annotations
 
@@ -48,9 +49,15 @@ from pipeline.channel_presets import get_preset, list_channel_ids
 from pipeline.edge_tts_synth import synthesize_full
 from pipeline.email_notifier import send_pipeline_failure_email, send_upload_success_email
 from pipeline.groq_script import generate_short_pack
-from pipeline.images import DEFAULT_NEGATIVE, full_visual_prompt, save_scene_image
+from pipeline.images import (
+    DEFAULT_NEGATIVE,
+    full_visual_prompt,
+    save_scene_image,
+    validate_visual_quality_policy,
+)
 from pipeline.quality_gate import validate_short_quality
 from pipeline.render_short import render_vertical_short
+from pipeline.story_validator import validate_story_consistency
 from pipeline.story_history import (
     check_duplicate,
     compute_file_sha256,
@@ -72,6 +79,7 @@ def run_pipeline(
     privacy: str = "private",
     run_id: str = "manual",
     run_url: str = "",
+    allow_procedural_fallback: bool = False,
 ) -> dict:
     """Execute the full end-to-end Short generation and upload pipeline."""
     preset = get_preset(channel_id)
@@ -86,6 +94,19 @@ def run_pipeline(
     selected_topic = ""
     upload_attempted = False
 
+    # Check dry-run environment flag
+    is_dry_run = dry_run or os.environ.get("DRY_RUN", "false").lower() in ("true", "1", "yes")
+    should_upload = bool(upload_enabled and not is_dry_run)
+
+    # Check procedural fallback permission
+    allow_procedural = (
+        allow_procedural_fallback
+        or os.environ.get("ALLOW_PROCEDURAL_FALLBACK", "false").lower() in ("true", "1", "yes")
+    )
+
+    if is_dry_run:
+        print("[DRY_RUN] Dry-run mode active: YouTube upload and live email notifications are strictly disabled.")
+
     # Initialize run state
     save_run_state({
         "run_id": run_id,
@@ -93,6 +114,8 @@ def run_pipeline(
         "started_at_utc": datetime.now(timezone.utc).isoformat(),
         "stage": "started",
         "status": "in_progress",
+        "dry_run": is_dry_run,
+        "allow_procedural_fallback": allow_procedural,
     })
 
     try:
@@ -141,11 +164,13 @@ def run_pipeline(
         description = pack.get("youtube_description", "").strip()
         narration = pack.get("full_narration", "").strip()
         image_prompts = pack.get("image_prompts", [])
+        provider = pack.get("_provider", "unknown")
+        model_used = pack.get("_model", "unknown")
 
-        # Validate script
+        print(f"   [SCRIPT PROVIDER] Generated via: {provider} (model: {model_used})")
+        print(f"   Title: {title}")
         word_count = len(narration.split())
         min_words = preset.get("min_words", 100)
-        print(f"   Title: {title}")
         print(f"   Narration word count: {word_count} (minimum required: {min_words})")
         print(f"   Scenes count: {len(image_prompts)}")
 
@@ -153,6 +178,11 @@ def run_pipeline(
             raise ValueError(f"Script word count {word_count} < required {min_words}")
         if not (6 <= len(image_prompts) <= 8):
             print(f"   [WARN] Image prompts count is {len(image_prompts)}, target is 6-8")
+
+        # ── 2b. Story consistency validation ────────────────────────────
+        print("\n   Validating story topic-title-script-scenes consistency...")
+        validate_story_consistency(selected_topic, title, narration, image_prompts)
+        print("   [CONSISTENCY] Story consistency check passed.")
 
         # Update topic record with generated script fingerprint
         update_topic_status(topic_id, "generated", script=narration)
@@ -167,17 +197,25 @@ def run_pipeline(
         cooldown = int(os.environ.get("IMAGE_COOLDOWN", "1"))
 
         image_paths: list[Path] = []
+        scene_manifest: dict[int, str] = {}
+
         for i, prompt_text in enumerate(image_prompts):
             full_prompt = full_visual_prompt(prompt_text, style_suffix=style_suffix)
             out_img = img_dir / f"scene_{i + 1:02d}.png"
             status, detail = save_scene_image(i + 1, full_prompt, out_img, width=w, height=h, negative=negative)
             if status != "ok":
                 raise RuntimeError(f"Failed to generate scene {i + 1}: {detail}")
-            print(f"   Scene {i + 1}/{len(image_prompts)}: generated via {detail}")
+            provider_name = detail.split()[0]
+            scene_manifest[i + 1] = provider_name
+            print(f"   Scene {i + 1}/{len(image_prompts)}: provider={detail}")
             image_paths.append(out_img)
             if i < len(image_prompts) - 1 and cooldown > 0:
                 time.sleep(cooldown)
 
+        # ── 3b. Enforce Visual Quality Policy ───────────────────────────
+        print("\n   Enforcing visual quality policy against scene manifest...")
+        validate_visual_quality_policy(scene_manifest, allow_procedural=allow_procedural)
+        print("   [VISUAL POLICY] Visual quality policy passed.")
         stages_passed.append("Visual Assets")
 
         # ── 4. Edge TTS voiceover synthesis ─────────────────────────────
@@ -187,8 +225,8 @@ def run_pipeline(
         total_dur, sentence_timings = synthesize_full(narration, audio_path, voice=voice)
         print(f"   Audio duration: {total_dur:.1f}s ({len(sentence_timings)} sentences tracked)")
 
-        if not (25.0 <= total_dur <= 58.0):
-            print(f"   [WARN] Audio duration is {total_dur:.1f}s; target is 30-50s")
+        if not (30.0 <= total_dur <= 58.0):
+            print(f"   [WARN] Audio duration is {total_dur:.1f}s; target is 30-55s")
 
         stages_passed.append("TTS Narration")
 
@@ -215,14 +253,15 @@ def run_pipeline(
             font_file=font_file,
             font_name=font_name,
         )
-        print(f"   Rendered video: {video_path} ({video_path.stat().st_size} bytes)")
+        file_size = video_path.stat().st_size if video_path.is_file() else 0
+        print(f"   Rendered video: {video_path} ({file_size} bytes)")
         stages_passed.append("FFmpeg Render")
 
         # ── 7. Visual Quality Gate ──────────────────────────────────────
-        print("\n[STAGE 7] Executing Visual Quality Gate...")
+        print("\n[STAGE 7] Executing Visual Quality Gate (strict 30.0–60.0s requirement)...")
         qg_result = validate_short_quality(
             video_path,
-            min_duration=25.0,
+            min_duration=30.0,
             max_duration=60.0,
             enforce_vertical=True,
             check_frames=True,
@@ -235,8 +274,9 @@ def run_pipeline(
 
         # ── 8. Duplicate check before upload ────────────────────────────
         print("\n[STAGE 8] Pre-upload duplicate check...")
-        video_sha256 = compute_file_sha256(video_path)
+        video_sha256 = compute_file_sha256(video_path) if video_path.is_file() else "mock_sha256"
         is_dup_vid, dup_vid_reason = is_video_already_uploaded(None, video_sha256)
+
         if is_dup_vid:
             raise RuntimeError(f"Duplicate video check failed: {dup_vid_reason}")
 
@@ -244,7 +284,6 @@ def run_pipeline(
 
         # ── 9. YouTube upload ───────────────────────────────────────────
         video_id = ""
-        should_upload = upload_enabled and not dry_run
         summary_text = " ".join(narration.split()[:28]) + "..."
 
         if should_upload:
@@ -269,7 +308,7 @@ def run_pipeline(
         else:
             sim_id = f"sim_{ts[-8:]}"
             video_id = sim_id
-            print(f"\n[STAGE 9] Upload skipped (dry-run={dry_run}, upload_enabled={upload_enabled}). Simulated ID: {sim_id}")
+            print(f"\n[STAGE 9] Upload SKIPPED (dry-run={is_dry_run}, upload_enabled={upload_enabled}). Simulated ID: {sim_id}")
             stages_passed.append("Upload (Simulated)")
 
         # ── 10. Record upload history ───────────────────────────────────
@@ -304,7 +343,8 @@ def run_pipeline(
             print(f"   Email notification: {email_msg}")
             update_notification_status(video_id, "sent" if email_ok else "failed")
         else:
-            print("   (Dry-run mode: skipping live success email)")
+            print("   [DRY_RUN] Dry-run mode: skipping live success email.")
+            update_notification_status(video_id, "skipped")
 
         # Save finished run state
         save_run_state({
@@ -317,6 +357,10 @@ def run_pipeline(
             "topic_id": topic_id,
             "video_id": video_id,
             "upload_status": "uploaded" if should_upload else "simulated",
+            "dry_run": is_dry_run,
+            "script_provider": provider,
+            "script_model": model_used,
+            "scene_manifest": scene_manifest,
             "video_path": str(video_path),
         })
 
@@ -329,6 +373,8 @@ def run_pipeline(
             "duration": qg_result.duration,
             "topic_id": topic_id,
             "stages_passed": stages_passed,
+            "dry_run": is_dry_run,
+            "script_provider": provider,
         }
 
     except Exception as exc:
@@ -343,21 +389,25 @@ def run_pipeline(
             "stage": "failed",
             "status": "failed",
             "topic_id": topic_id,
+            "dry_run": is_dry_run,
             "last_error_summary": str(exc)[:300],
         })
 
-        # Attempt to send sanitized failure alert if SMTP is configured
-        try:
-            send_pipeline_failure_email(
-                failed_stage=stages_passed[-1] if stages_passed else "Initialization",
-                error_summary=str(exc),
-                topic_title=topic_title,
-                run_id=run_id,
-                run_url=run_url,
-                upload_attempted=upload_attempted,
-            )
-        except Exception as e_mail:
-            print(f"[WARN] Failed to send failure email: {e_mail}")
+        # Only attempt to send failure alert if not in dry-run mode and upload was attempted or ambiguous
+        if not is_dry_run:
+            try:
+                send_pipeline_failure_email(
+                    failed_stage=stages_passed[-1] if stages_passed else "Initialization",
+                    error_summary=str(exc),
+                    topic_title=topic_title,
+                    run_id=run_id,
+                    run_url=run_url,
+                    upload_attempted=upload_attempted,
+                )
+            except Exception as e_mail:
+                print(f"[WARN] Failed to send failure email: {e_mail}")
+        else:
+            print("   [DRY_RUN] Dry-run mode: skipping failure email alert.")
 
         raise
 
@@ -368,6 +418,11 @@ def main() -> None:
     parser.add_argument("--topic", default="", help="Optional specific topic prompt")
     parser.add_argument("--upload", action="store_true", help="Enable actual upload to YouTube")
     parser.add_argument("--dry-run", action="store_true", help="Simulate without publishing to YouTube")
+    parser.add_argument(
+        "--allow-procedural-fallback",
+        action="store_true",
+        help="Explicitly permit procedural visual placeholders if AI image generation fails",
+    )
     parser.add_argument("--privacy", default="private", choices=["private", "unlisted", "public"])
     parser.add_argument("--run-id", default=os.environ.get("GITHUB_RUN_ID", "manual_run"))
     parser.add_argument(
@@ -379,17 +434,19 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # If --dry-run is passed, upload is disabled
-    upload_enabled = args.upload and not args.dry_run
+    # If --dry-run is passed, upload is strictly disabled
+    is_dry_run = args.dry_run or os.environ.get("DRY_RUN", "false").lower() in ("true", "1", "yes")
+    upload_enabled = args.upload and not is_dry_run
 
     run_pipeline(
         channel_id=args.channel,
         topic_override=args.topic,
         upload_enabled=upload_enabled,
-        dry_run=args.dry_run,
+        dry_run=is_dry_run,
         privacy=args.privacy,
         run_id=args.run_id,
         run_url=args.run_url,
+        allow_procedural_fallback=args.allow_procedural_fallback,
     )
 
 
