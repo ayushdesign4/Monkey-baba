@@ -206,7 +206,7 @@ def run_pipeline(
             if status != "ok":
                 raise RuntimeError(f"Failed to generate scene {i + 1}: {detail}")
             provider_name = detail.split()[0]
-            scene_manifest[i + 1] = provider_name
+            scene_manifest[i + 1] = detail
             print(f"   Scene {i + 1}/{len(image_prompts)}: provider={detail}")
             image_paths.append(out_img)
             if i < len(image_prompts) - 1 and cooldown > 0:

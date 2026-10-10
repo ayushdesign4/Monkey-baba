@@ -60,6 +60,8 @@ jobs:
     timeout-minutes: 20
 
     env:
+      POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY || secrets.POLLINATIONS_TOKEN }}
+      POLLINATIONS_MODEL: "openai/gpt-image-1-mini"
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       YT_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}

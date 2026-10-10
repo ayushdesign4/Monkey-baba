@@ -7,6 +7,7 @@ __pycache__/
 # Environment variables & secrets (NEVER COMMIT)
 .env
 .env.*
+!.env.example
 *.key
 *.pem
 credentials.json
