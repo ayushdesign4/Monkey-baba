@@ -194,5 +194,19 @@
     "status": "uploaded",
     "youtube_video_id": "jITfXQDgLvU",
     "youtube_url": "https://www.youtube.com/watch?v=jITfXQDgLvU"
+  },
+  {
+    "topic_id": "topic_20261011_061239_0549",
+    "normalized_topic": "a hotel room with a peephole showing an endless dark corridor that isn t on the floor plan",
+    "topic_title": "a hotel room with a peephole showing an endless dark corridor that isn't on the floor plan",
+    "topic_summary": "",
+    "story_fingerprint": "0f190fabe4752c2a64040ea378b893cfd4b4c3e961470a9d1f96ca96dbf1b5d2",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-11T06:12:39.133390+00:00",
+    "run_id": "38117212441",
+    "status": "uploaded",
+    "youtube_video_id": "g7PNScCdoJU",
+    "youtube_url": "https://www.youtube.com/watch?v=g7PNScCdoJU"
   }
 ]

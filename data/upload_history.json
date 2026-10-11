@@ -80,5 +80,22 @@
     "dry_run": false,
     "notification_status": "sent",
     "notification_sent_at_utc": "2026-10-10T09:21:34.481561+00:00"
+  },
+  {
+    "video_id": "g7PNScCdoJU",
+    "video_url": "https://www.youtube.com/watch?v=g7PNScCdoJU",
+    "title": "The Door That Shouldn't Exist",
+    "topic_id": "topic_20261011_061239_0549",
+    "story_fingerprint": "0f190fabe4752c2a64040ea378b893cfd4b4c3e961470a9d1f96ca96dbf1b5d2",
+    "video_sha256": "09074e7bdde7f4c3ebef40f7f31c094b910d28899451e0b485aa07a41b551d18",
+    "duration_seconds": 42.9,
+    "language": "en",
+    "niche": "horror storytelling",
+    "uploaded_at_utc": "2026-10-11T06:17:19.088787+00:00",
+    "run_id": "38117212441",
+    "status": "uploaded",
+    "dry_run": false,
+    "notification_status": "sent",
+    "notification_sent_at_utc": "2026-10-11T06:17:21.052606+00:00"
   }
 ]
