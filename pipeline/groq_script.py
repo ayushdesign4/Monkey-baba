@@ -13,6 +13,8 @@ from typing import Any
 from groq import Groq
 
 from pipeline.channel_presets import ChannelPreset
+from pipeline.gemini_provider import call_gemini, is_gemini_configured
+from pipeline.openrouter_provider import call_openrouter, is_openrouter_configured
 from pipeline.story_history import history_prompt_block
 
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
@@ -248,23 +250,55 @@ def generate_short_pack(
     n = preset["segment_count"]
     variants = preset.get("variants") or []
 
-    # Priority: Groq LLM -> deterministic local emergency fallback
+    # ── LLM Provider 1: Google Gemini (Primary) ─────────────────────────
+    if is_gemini_configured():
+        try:
+            print("[SCRIPT_PROVIDER] Attempting text generation via Gemini...")
+            if variants:
+                pack = _generate_multivariant(preset, user, n, variants, call_fn=call_gemini)
+            else:
+                pack = _generate_single(preset, user, n, call_fn=call_gemini)
+            pack.setdefault("_provider", "gemini")
+            print(f"[SCRIPT_PROVIDER] Generated via Gemini ({pack.get('_model', 'model')})")
+            return pack
+        except Exception as exc:
+            print(f"[WARN] Gemini generation failed ({type(exc).__name__}: {exc}). Switching to Groq fallback.")
+
+    # ── LLM Provider 2: Groq (Fallback #1) ───────────────────────────────
     if os.environ.get("GROQ_API_KEY", "").strip():
         try:
+            print("[SCRIPT_PROVIDER] Attempting text generation via Groq...")
             if variants:
-                pack = _generate_multivariant(preset, user, n, variants)
+                pack = _generate_multivariant(preset, user, n, variants, call_fn=_call_groq)
             else:
-                pack = _generate_single(preset, user, n)
+                pack = _generate_single(preset, user, n, call_fn=_call_groq)
             pack.setdefault("_provider", "groq")
             print(f"[SCRIPT_PROVIDER] Generated via Groq ({pack.get('_model', 'model')})")
             return pack
         except Exception as exc:
-            print(f"[WARN] Groq generation failed ({type(exc).__name__}: {exc}). Switching to deterministic local fallback.")
+            print(f"[WARN] Groq generation failed ({type(exc).__name__}: {exc}). Switching to OpenRouter fallback.")
     else:
-        print("[INFO] GROQ_API_KEY not set. Using deterministic local Python emergency fallback.")
+        print("[INFO] GROQ_API_KEY not set. Checking OpenRouter fallback.")
 
+    # ── LLM Provider 3: OpenRouter Free Models (Fallback #2) ─────────────
+    if is_openrouter_configured():
+        try:
+            print("[SCRIPT_PROVIDER] Attempting text generation via OpenRouter free models...")
+            if variants:
+                pack = _generate_multivariant(preset, user, n, variants, call_fn=call_openrouter)
+            else:
+                pack = _generate_single(preset, user, n, call_fn=call_openrouter)
+            pack.setdefault("_provider", "openrouter")
+            print(f"[SCRIPT_PROVIDER] Generated via OpenRouter ({pack.get('_model', 'model')})")
+            return pack
+        except Exception as exc:
+            print(f"[WARN] OpenRouter generation failed ({type(exc).__name__}: {exc}). Switching to deterministic local fallback.")
+    else:
+        print("[INFO] OPENROUTER_API_KEY not set. Using deterministic local Python emergency fallback.")
+
+    # ── Provider 4: Deterministic Local Emergency Fallback ────────────────
     fallback_pack = generate_local_fallback(preset, topic_hint=topic_hint)
-    print(f"[SCRIPT_PROVIDER] Local emergency fallback used ({fallback_pack.get('_model')}). Groq was NOT used.")
+    print(f"[SCRIPT_PROVIDER] Local emergency fallback used ({fallback_pack.get('_model')}). Cloud LLMs were NOT used.")
     return fallback_pack
 
 
@@ -274,7 +308,15 @@ def generate_short_pack(
 # ─────────────────────────────────────────────────────────────────────────
 # Single-language path (backward compat for ghost_stories, school_story, etc.)
 # ─────────────────────────────────────────────────────────────────────────
-def _generate_single(preset: ChannelPreset, user: str, n: int) -> dict[str, Any]:
+def _generate_single(
+    preset: ChannelPreset,
+    user: str,
+    n: int,
+    *,
+    call_fn: Any = None,
+) -> dict[str, Any]:
+    if call_fn is None:
+        call_fn = _call_groq
     language = (preset.get("language") or "en").lower()
     lo, hi, blurb = LANG_WORD_TARGETS.get(language, LANG_WORD_TARGETS["en"])
 
@@ -328,7 +370,7 @@ STRICT RULES:
             )
 
         temp = 0.85 if attempt < 2 else 0.45
-        data = _call_groq(preset, user + extra, temperature=temp)
+        data = call_fn(preset, user + extra, temperature=temp)
 
         try:
             narration = data.get("full_narration", "").strip()
@@ -363,8 +405,15 @@ STRICT RULES:
 # Multi-variant path (one Groq call returns every language's narration)
 # ─────────────────────────────────────────────────────────────────────────
 def _generate_multivariant(
-    preset: ChannelPreset, user: str, n: int, variants: list,
+    preset: ChannelPreset,
+    user: str,
+    n: int,
+    variants: list,
+    *,
+    call_fn: Any = None,
 ) -> dict[str, Any]:
+    if call_fn is None:
+        call_fn = _call_groq
     # Build the per-language requirement lines
     lang_lines = []
     for v in variants:
@@ -424,7 +473,7 @@ STRICT RULES:
             )
         # Later attempts: lower temperature so the model obeys length constraints more reliably.
         temp = 0.85 if attempt < 2 else 0.45
-        data = _call_groq(preset, user + extra, temperature=temp)
+        data = call_fn(preset, user + extra, temperature=temp)
         try:
             _assert_multivariant_valid(data, variants, n)
             return data
@@ -536,5 +585,10 @@ def _call_groq(
             raise
 
     raise RuntimeError(f"All Groq candidate models failed. Last error: {last_exc}")
+
+
+# Provider call aliases for internal / testing access
+_call_gemini = call_gemini
+_call_openrouter = call_openrouter
 
 
