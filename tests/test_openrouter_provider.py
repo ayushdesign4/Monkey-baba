@@ -477,3 +477,115 @@ def test_fenced_json_parsing_and_credential_sanitization():
     sanitized = sanitize_text(text_with_secret, secret=secret)
     assert secret not in sanitized
     assert "[REDACTED]" in sanitized
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 14: Safe dry-run integration test — OpenRouter generates script in pipeline
+# ─────────────────────────────────────────────────────────────────────────────
+def test_openrouter_dry_run_pipeline_integration(tmp_path, monkeypatch):
+    """Confirm OpenRouter discovers free models and generates valid script/scenes
+    when Gemini and Groq are disabled, running through full dry-run orchestrator safely.
+    """
+    from scripts.run_short import run_pipeline
+
+    monkeypatch.setattr("pipeline.story_history.DATA_DIR", tmp_path)
+    monkeypatch.setattr("pipeline.story_history.TOPIC_HISTORY_PATH", tmp_path / "topic_history.json")
+    monkeypatch.setattr("pipeline.story_history.UPLOAD_HISTORY_PATH", tmp_path / "upload_history.json")
+    monkeypatch.setattr("pipeline.story_history.RUN_STATE_PATH", tmp_path / "run_state.json")
+
+    # Disable Gemini & Groq
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    # Enable OpenRouter
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-mock-integration-key-12345")
+    monkeypatch.setenv("OPENROUTER_MODEL", "openrouter/free")
+
+    catalogue_data = {
+        "data": [
+            {"id": "openrouter/free", "pricing": {"prompt": "0", "completion": "0"}},
+            {"id": "meta-llama/llama-3.3-70b-instruct:free", "pricing": {"prompt": "0", "completion": "0"}},
+        ]
+    }
+    chat_resp_data = make_mock_chat_completion_resp(json.dumps(SAMPLE_VALID_PACK), model="openrouter/free")
+
+    def mock_urlopen(req, timeout=None):
+        url = req.full_url
+        if "/models" in url:
+            return make_mock_http_response(catalogue_data)
+        elif "/chat/completions" in url:
+            return make_mock_http_response(chat_resp_data)
+        raise ValueError(f"Unexpected url: {url}")
+
+    mock_upload = MagicMock()
+    mock_email = MagicMock()
+
+    with patch("urllib.request.urlopen", side_effect=mock_urlopen), \
+         patch("pipeline.youtube_upload.upload_short", mock_upload), \
+         patch("scripts.run_short.send_upload_success_email", mock_email), \
+         patch("scripts.run_short.synthesize_full", return_value=(45.0, [{"offset_ms": 0, "duration_ms": 45000, "text": "sentence"}])), \
+         patch("scripts.run_short.build_srt"), \
+         patch("scripts.run_short.render_vertical_short"), \
+         patch("scripts.run_short.validate_short_quality") as mock_qg, \
+         patch("scripts.run_short.save_scene_image", return_value=("ok", "pollinations")):
+
+        mock_qg.return_value = MagicMock(passed=True, duration=45.0, width=1080, height=1920, errors=[])
+
+        result = run_pipeline(
+            channel_id="horror",
+            topic_override="a clock that strikes thirteen times",
+            dry_run=True,
+            upload_enabled=False,
+            run_id="test_openrouter_integration",
+            allow_procedural_fallback=False,
+        )
+
+        assert result["status"] == "success"
+        assert result["dry_run"] is True
+        assert result["video_id"].startswith("sim_")
+        assert mock_upload.call_count == 0
+        assert mock_email.call_count == 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 15: OpenRouter failure falls through to local fallback in pipeline
+# ─────────────────────────────────────────────────────────────────────────────
+def test_openrouter_failure_falls_through_to_local_fallback_in_pipeline(tmp_path, monkeypatch):
+    """Confirm that when OpenRouter fails, the pipeline cleanly falls back to deterministic local fallback."""
+    from scripts.run_short import run_pipeline
+
+    monkeypatch.setattr("pipeline.story_history.DATA_DIR", tmp_path)
+    monkeypatch.setattr("pipeline.story_history.TOPIC_HISTORY_PATH", tmp_path / "topic_history.json")
+    monkeypatch.setattr("pipeline.story_history.UPLOAD_HISTORY_PATH", tmp_path / "upload_history.json")
+    monkeypatch.setattr("pipeline.story_history.RUN_STATE_PATH", tmp_path / "run_state.json")
+
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-mock-failing-key")
+
+    mock_upload = MagicMock()
+    mock_email = MagicMock()
+
+    with patch("pipeline.openrouter_provider.call_openrouter", side_effect=RuntimeError("All free models failed")), \
+         patch("pipeline.youtube_upload.upload_short", mock_upload), \
+         patch("scripts.run_short.send_upload_success_email", mock_email), \
+         patch("scripts.run_short.synthesize_full", return_value=(45.0, [{"offset_ms": 0, "duration_ms": 45000, "text": "sentence"}])), \
+         patch("scripts.run_short.build_srt"), \
+         patch("scripts.run_short.render_vertical_short"), \
+         patch("scripts.run_short.validate_short_quality") as mock_qg, \
+         patch("scripts.run_short.save_scene_image", return_value=("ok", "pollinations")):
+
+        mock_qg.return_value = MagicMock(passed=True, duration=45.0, width=1080, height=1920, errors=[])
+
+        result = run_pipeline(
+            channel_id="horror",
+            topic_override="an antique mirror that blinks late",
+            dry_run=True,
+            upload_enabled=False,
+            run_id="test_openrouter_fallback",
+            allow_procedural_fallback=False,
+        )
+
+        assert result["status"] == "success"
+        assert result["dry_run"] is True
+        assert mock_upload.call_count == 0
+
