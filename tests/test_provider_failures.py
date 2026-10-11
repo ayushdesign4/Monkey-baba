@@ -61,7 +61,9 @@ def test_groq_404_model_fallback(monkeypatch):
 
 def test_groq_failure_tags_local_fallback(monkeypatch):
     # Proves local emergency fallback is explicitly tagged and never claims Groq succeeded
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     preset = get_preset("horror")
 
     pack = generate_short_pack(preset, topic_hint="an abandoned asylum")

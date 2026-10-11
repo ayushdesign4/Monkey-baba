@@ -7,6 +7,7 @@ import urllib.error
 import pytest
 
 from pipeline.channel_presets import get_preset
+from pipeline.gemini_provider import GeminiProvider, call_gemini
 from pipeline.groq_script import generate_short_pack
 from pipeline.openrouter_provider import (
     DEFAULT_BASE_URL,
@@ -48,10 +49,12 @@ SAMPLE_VALID_PACK = {
 
 @pytest.fixture(autouse=True)
 def reset_catalogue():
-    """Reset OpenRouter catalogue state before each test."""
+    """Reset OpenRouter catalogue state and GeminiProvider before each test."""
     OpenRouterCatalogue.reset()
+    GeminiProvider.reset()
     yield
     OpenRouterCatalogue.reset()
+    GeminiProvider.reset()
 
 
 def make_mock_http_response(json_data: dict[str, Any], status: int = 200):
@@ -588,4 +591,148 @@ def test_openrouter_failure_falls_through_to_local_fallback_in_pipeline(tmp_path
         assert result["status"] == "success"
         assert result["dry_run"] is True
         assert mock_upload.call_count == 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 16: Gemini model 404 rotates to next model and retains active model
+# ─────────────────────────────────────────────────────────────────────────────
+def test_gemini_model_404_rotates_and_retains_valid_model(monkeypatch):
+    """Verify that when a Gemini model returns 404, Gemini rotates to the next candidate model
+    without failing the provider, and a valid Gemini response prevents Groq/OpenRouter fallback.
+    """
+    monkeypatch.setenv("GEMINI_API_KEY", "gemini_mock_key_live_test")
+    monkeypatch.setenv("GROQ_API_KEY", "groq_mock_key_12345")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "openrouter_mock_key_12345")
+    preset = get_preset("horror")
+
+    attempted_gemini_models = []
+
+    def mock_gemini_urlopen(req, timeout=None):
+        url = req.full_url
+        if "/models?" in url:
+            # Models discovery returns 2 models
+            data = {
+                "models": [
+                    {"name": "models/gemini-2.5-flash-unavailable", "supportedGenerationMethods": ["generateContent"]},
+                    {"name": "models/gemini-2.0-flash", "supportedGenerationMethods": ["generateContent"]},
+                ]
+            }
+            return make_mock_http_response(data)
+        elif ":generateContent" in url:
+            # Extract model id from url
+            # e.g. https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent?key=...
+            mid = url.split("/models/")[1].split(":generateContent")[0]
+            attempted_gemini_models.append(mid)
+            if "unavailable" in mid:
+                fp = MagicMock()
+                fp.read.return_value = b'{"error": {"code": 404, "message": "Model not found"}}'
+                raise urllib.error.HTTPError(url, 404, "Not Found", {}, fp)
+
+            # Valid model succeeds
+            return make_mock_http_response({
+                "candidates": [
+                    {"content": {"parts": [{"text": json.dumps(SAMPLE_VALID_PACK)}]}}
+                ]
+            })
+        raise ValueError(f"Unexpected url: {url}")
+
+    mock_groq = MagicMock()
+    mock_openrouter = MagicMock()
+
+    with patch("urllib.request.urlopen", side_effect=mock_gemini_urlopen), \
+         patch("pipeline.groq_script._call_groq", mock_groq), \
+         patch("pipeline.groq_script.call_openrouter", mock_openrouter):
+
+        pack = generate_short_pack(preset)
+        assert pack["_provider"] == "gemini"
+        assert pack["_model"] == "gemini-2.0-flash"
+        # Proves 404 model was attempted, then rotated to valid model
+        assert attempted_gemini_models == ["gemini-2.5-flash-unavailable", "gemini-2.0-flash"]
+        # Proves GeminiProvider marked 404 model exhausted
+        assert "gemini-2.5-flash-unavailable" in GeminiProvider._exhausted_models
+        # Proves GeminiProvider saved active model
+        assert GeminiProvider._active_model == "gemini-2.0-flash"
+        # Proves Groq and OpenRouter were NEVER called
+        assert mock_groq.call_count == 0
+        assert mock_openrouter.call_count == 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 17: Invalid Gemini output triggers repair and falls through to Groq
+# ─────────────────────────────────────────────────────────────────────────────
+def test_invalid_gemini_output_triggers_repair_and_falls_through_to_groq(monkeypatch):
+    """Verify that when Gemini produces invalid/too-short narration that fails contract validation,
+    the pipeline attempts repair and, if still failing, cleanly falls through to Groq.
+    """
+    monkeypatch.setenv("GEMINI_API_KEY", "gemini_mock_key_live_test")
+    monkeypatch.setenv("GROQ_API_KEY", "groq_mock_key_12345")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "openrouter_mock_key_12345")
+    preset = get_preset("horror")
+
+    # Gemini returns too short narration (<100 words)
+    invalid_pack = dict(SAMPLE_VALID_PACK, full_narration="Too short narration under twenty words.")
+
+    gemini_calls = 0
+
+    def mock_gemini_call(p, u, **kwargs):
+        nonlocal gemini_calls
+        gemini_calls += 1
+        return dict(invalid_pack, _provider="gemini", _model="gemini-2.0-flash")
+
+    mock_groq = MagicMock(return_value=dict(SAMPLE_VALID_PACK, _provider="groq", _model="llama-3.1-8b-instant"))
+    mock_openrouter = MagicMock()
+
+    with patch("pipeline.groq_script.call_gemini", side_effect=mock_gemini_call), \
+         patch("pipeline.groq_script._call_groq", mock_groq), \
+         patch("pipeline.groq_script.call_openrouter", mock_openrouter):
+
+        pack = generate_short_pack(preset)
+        # Validation repaired/retried Gemini 3 times before giving up
+        assert gemini_calls == 3
+        # Succeeded on Groq
+        assert pack["_provider"] == "groq"
+        assert pack["_model"] == "llama-3.1-8b-instant"
+        assert mock_groq.call_count >= 1
+        # OpenRouter was not needed
+        assert mock_openrouter.call_count == 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 18: Provider and Model Attribution Metadata
+# ─────────────────────────────────────────────────────────────────────────────
+def test_provider_and_model_attribution_metadata(monkeypatch):
+    """Verify that _provider and _model metadata accurately reflect the provider and model
+    that produced the accepted result across all tiers.
+    """
+    preset = get_preset("horror")
+
+    # 1. Gemini attribution
+    monkeypatch.setenv("GEMINI_API_KEY", "gemini_key")
+    with patch("pipeline.groq_script.call_gemini", return_value=dict(SAMPLE_VALID_PACK, _provider="gemini", _model="gemini-3.1-flash-lite")):
+        res = generate_short_pack(preset)
+        assert res["_provider"] == "gemini"
+        assert res["_model"] == "gemini-3.1-flash-lite"
+
+    # 2. Groq attribution
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.setenv("GROQ_API_KEY", "groq_key")
+    with patch("pipeline.groq_script._call_groq", return_value=dict(SAMPLE_VALID_PACK, _provider="groq", _model="llama-3.3-70b-versatile")):
+        res = generate_short_pack(preset)
+        assert res["_provider"] == "groq"
+        assert res["_model"] == "llama-3.3-70b-versatile"
+
+    # 3. OpenRouter attribution
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "or_key")
+    with patch("pipeline.groq_script.call_openrouter", return_value=dict(SAMPLE_VALID_PACK, _provider="openrouter", _model="meta-llama/llama-3.3-70b-instruct:free")):
+        res = generate_short_pack(preset)
+        assert res["_provider"] == "openrouter"
+        assert res["_model"] == "meta-llama/llama-3.3-70b-instruct:free"
+
+    # 4. Local fallback attribution
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    res = generate_short_pack(preset)
+    assert res["_provider"] == "deterministic_local_fallback"
+    assert res["_model"] in ("local_static", "local_adaptive")
+
 

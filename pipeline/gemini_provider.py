@@ -26,7 +26,6 @@ INITIAL_DELAY = 1.0
 MAX_DELAY = 10.0
 
 DEFAULT_CANDIDATE_MODELS = [
-    "gemini-2.5-flash",
     "gemini-2.0-flash",
     "gemini-1.5-flash",
     "gemini-1.5-pro",
@@ -34,16 +33,18 @@ DEFAULT_CANDIDATE_MODELS = [
 
 
 class GeminiProvider:
-    """Stateful model discovery cache and quota tracker."""
+    """Stateful model discovery cache, active model retention, and quota tracker."""
     _cached_models: list[str] = []
     _cache_timestamp: float = 0.0
     _exhausted_models: set[str] = set()
+    _active_model: str | None = None
 
     @classmethod
     def reset(cls) -> None:
         cls._cached_models = []
         cls._cache_timestamp = 0.0
         cls._exhausted_models.clear()
+        cls._active_model = None
 
 
 def is_gemini_configured() -> bool:
@@ -100,27 +101,18 @@ def discover_gemini_models(api_key: str) -> list[str]:
 
                 discovered.append(mid)
 
-            def model_priority(m_id: str) -> tuple[int, int, str]:
+            def model_priority(m_id: str) -> tuple[int, float, str]:
                 l = m_id.lower()
                 is_flash = 0 if "flash" in l else 1
-                ver = 99
-                if "2.5" in l:
-                    ver = 0
-                elif "2.0" in l:
-                    ver = 1
-                elif "1.5" in l:
-                    ver = 2
-                elif "3." in l:
-                    ver = 3
-                return (is_flash, ver, m_id)
+                match = re.search(r"gemini-(\d+(?:\.\d+)?)", l)
+                ver = float(match.group(1)) if match else 1.0
+                return (is_flash, -ver, m_id)
 
             discovered.sort(key=model_priority)
     except Exception as exc:
         print(f"[WARN] Gemini models discovery failed ({sanitize_text(str(exc), api_key)}). Using fallback list.")
 
-    candidates = ([m for m in discovered if m] if discovered else []) + [
-        m for m in DEFAULT_CANDIDATE_MODELS if m not in discovered
-    ]
+    candidates = list(discovered) if discovered else list(DEFAULT_CANDIDATE_MODELS)
     GeminiProvider._cached_models = candidates
     GeminiProvider._cache_timestamp = now
     return candidates
@@ -215,10 +207,15 @@ def call_gemini(
     candidates = [m for m in models if m not in GeminiProvider._exhausted_models]
     if not candidates:
         GeminiProvider._exhausted_models.clear()
-        candidates = models
+        candidates = list(models)
 
     if not candidates:
         raise RuntimeError("No available Gemini models found.")
+
+    # Re-use active model first if available and not exhausted
+    if GeminiProvider._active_model and GeminiProvider._active_model in candidates:
+        candidates.remove(GeminiProvider._active_model)
+        candidates.insert(0, GeminiProvider._active_model)
 
     system_prompt = preset.get("groq_system_hint", "You are an expert horror writer.")
     last_error: Exception | None = None
@@ -246,15 +243,26 @@ def call_gemini(
             data = json.loads(cleaned)
             data["_provider"] = "gemini"
             data["_model"] = model
-            print(f"[GEMINI] Text generation succeeded with model '{model}'.")
+
+            GeminiProvider._active_model = model
+            print(f"[GEMINI] Text generation succeeded with model '{model}' (retained as active model).")
             return data
 
         except Exception as exc:
             err_msg = sanitize_text(str(exc), api_key)
             last_error = exc
+            if "404" in err_msg or "not_found" in err_msg.lower() or "not found" in err_msg.lower():
+                print(f"[WARN] Gemini model '{model}' not found (404). Marking unavailable and rotating...")
+                GeminiProvider._exhausted_models.add(model)
+                if GeminiProvider._active_model == model:
+                    GeminiProvider._active_model = None
+                continue
+
             if "429" in err_msg or "quota" in err_msg.lower() or "resource_exhausted" in err_msg.lower():
                 print(f"[WARN] Gemini model '{model}' quota exhausted (429). Rotating to next model...")
                 GeminiProvider._exhausted_models.add(model)
+                if GeminiProvider._active_model == model:
+                    GeminiProvider._active_model = None
                 continue
 
             if "401" in err_msg or "403" in err_msg:
@@ -262,6 +270,9 @@ def call_gemini(
                 raise
 
             print(f"[WARN] Gemini model '{model}' failed: {err_msg[:120]}. Rotating...")
+            GeminiProvider._exhausted_models.add(model)
+            if GeminiProvider._active_model == model:
+                GeminiProvider._active_model = None
             continue
 
     raise RuntimeError(f"All candidate Gemini models failed. Last error: {last_error}")

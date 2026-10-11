@@ -21,7 +21,9 @@ def test_deterministic_local_fallback_horror():
 
 
 def test_generate_short_pack_without_api_key(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     preset = get_preset("horror")
     pack = generate_short_pack(preset)
     
