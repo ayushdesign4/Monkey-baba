@@ -208,5 +208,19 @@
     "status": "uploaded",
     "youtube_video_id": "g7PNScCdoJU",
     "youtube_url": "https://www.youtube.com/watch?v=g7PNScCdoJU"
+  },
+  {
+    "topic_id": "topic_20261012_012834_7258",
+    "normalized_topic": "a midnight radio broadcast that describes what you are wearing right now",
+    "topic_title": "a midnight radio broadcast that describes what you are wearing right now",
+    "topic_summary": "",
+    "story_fingerprint": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-12T01:28:34.844489+00:00",
+    "run_id": "38191926296",
+    "status": "failed",
+    "youtube_video_id": null,
+    "youtube_url": null
   }
 ]
