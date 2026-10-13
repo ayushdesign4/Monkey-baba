@@ -175,3 +175,28 @@ def test_ai_relevance_check_explicit_no():
             ["Clock repair shop"],
             use_ai=True,
         ) is False
+
+
+def test_ai_relevance_check_timeout_parameter():
+    """Verify that _check_relevance_via_ai has timeout defaulting to 30.0 seconds."""
+    import inspect
+    sig = inspect.signature(_check_relevance_via_ai)
+    assert sig.parameters["timeout"].default == 30.0
+
+
+def test_ai_relevance_check_timeout_fallback():
+    """Simulate a 30s timeout on provider call and verify graceful fallback to permissive matching."""
+    import socket
+    topic = "The Forgotten Underground Station"
+    title = "The Midnight Commute #Shorts"
+    script = (
+        "Deep below the city streets, a traveler waited upon the dimly lit subway platform. "
+        "The steel rails began to hum with an approaching train that was never scheduled on any timetable."
+    )
+    scenes = ["Subway platform at midnight", "Approaching train lights in the tunnel"]
+
+    with patch("urllib.request.urlopen", side_effect=socket.timeout("Operation timed out after 30s")):
+        with patch.dict("os.environ", {"GEMINI_API_KEY": "dummy_key"}):
+            # Must fall back gracefully and succeed without raising TimeoutError
+            validate_story_consistency(topic, title, script, scenes)
+

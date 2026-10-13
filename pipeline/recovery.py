@@ -231,7 +231,7 @@ def _check_relevance_via_ai(
     script: str,
     scene_prompts: list[str] | None = None,
     *,
-    timeout: float = 4.0,
+    timeout: float = 30.0,
 ) -> bool | None:
     """Lightweight bounded AI check using configured LLM provider (Groq, Gemini, or OpenRouter).
     Returns:
