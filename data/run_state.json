@@ -1,10 +1,10 @@
 {
-  "run_id": "38191926296",
+  "run_id": "38340029389",
   "channel": "horror",
-  "finished_at_utc": "2026-10-12T01:28:57.894402+00:00",
+  "finished_at_utc": "2026-10-13T03:11:04.988130+00:00",
   "stage": "failed",
   "status": "failed",
-  "topic_id": "topic_20261012_012834_7258",
+  "topic_id": "topic_20261013_030734_4848",
   "dry_run": false,
-  "last_error_summary": "Title mismatch detected! Title keywords {'frequency', 'wearing', 'knows', 'midnight', 'you'} have no overlap with script narration. Title: 'The Midnight Frequency Knows What You're Wearing'"
+  "last_error_summary": "Visual Quality Policy Violation: Procedural placeholders were used for scenes [3] because AI visual generation failed. Public upload is blocked to prevent uploading placeholder videos. To permit procedural visual placeholders, set ALLOW_PROCEDURAL_FALLBACK=true or pass --allow-procedural-fallback."
 }

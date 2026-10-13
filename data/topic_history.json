@@ -222,5 +222,19 @@
     "status": "failed",
     "youtube_video_id": null,
     "youtube_url": null
+  },
+  {
+    "topic_id": "topic_20261013_030734_4848",
+    "normalized_topic": "a music box that starts playing backward whenever somebody lies",
+    "topic_title": "a music box that starts playing backward whenever somebody lies",
+    "topic_summary": "",
+    "story_fingerprint": "fa6ab523018f7f33ab8aa6bcad2d691958ac7eae3908924b792081165755651e",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-13T03:07:34.167785+00:00",
+    "run_id": "38340029389",
+    "status": "failed",
+    "youtube_video_id": null,
+    "youtube_url": null
   }
 ]
