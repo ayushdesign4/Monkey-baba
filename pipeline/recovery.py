@@ -12,6 +12,7 @@ Provides:
 from __future__ import annotations
 
 import enum
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -127,22 +128,208 @@ def rewrite_prompt_for_safety(prompt: str) -> str:
 # 3. Thematic / Semantic Premise Broad Matching
 # ─────────────────────────────────────────────────────────────────────────────
 
-THEMATIC_SYNONYMS: dict[str, set[str]] = {
-    "lake": {"water", "lake", "ocean", "sea", "pond", "depths", "surface", "shore", "tide", "reservoir", "waves", "still"},
-    "water": {"water", "lake", "ocean", "sea", "pond", "depths", "surface", "shore", "tide", "reservoir", "submerged", "drowned"},
-    "mirror": {"mirror", "reflection", "glass", "silver", "surface", "looking", "stare", "antique", "frame", "double", "gazing"},
-    "doll": {"doll", "puppet", "toy", "mannequin", "porcelain", "figurine", "plaything", "effigy"},
-    "forest": {"forest", "woods", "trees", "pines", "branches", "clearing", "cabin", "timber", "grove", "wilderness"},
-    "house": {"house", "mansion", "home", "cabin", "manor", "residence", "estate", "attic", "basement", "room", "hallway"},
-    "clock": {"clock", "time", "chime", "midnight", "hour", "pendulum", "ticks", "ticking", "watch"},
-    "ghost": {"ghost", "spirit", "phantom", "specter", "spectre", "apparition", "shadow", "entity", "presence", "whisper"},
-    "whisper": {"whisper", "voice", "sound", "murmur", "calling", "echo", "hiss", "breathe", "breathing"},
-    "dream": {"dream", "nightmare", "sleep", "awake", "slumber", "waking", "vision"},
-    "painting": {"painting", "portrait", "canvas", "frame", "artist", "brush", "eyes", "picture"},
-    "stairs": {"stairs", "staircase", "steps", "basement", "cellar", "attic", "creak", "below", "underneath"},
-    "storm": {"storm", "thunder", "lightning", "rain", "tempest", "clouds", "darkness", "night"},
-    "shadow": {"shadow", "silhouette", "figure", "darkness", "shape", "outline", "shade"},
+THEMATIC_CLUSTERS: dict[str, set[str]] = {
+    "water": {
+        "water", "lake", "ocean", "sea", "river", "pond", "depths", "surface", "shore",
+        "shoreline", "tide", "reservoir", "waves", "submerged", "drowned", "aquatic",
+        "swamp", "marsh", "creek", "dock", "pier", "boat", "fisherman", "island", "abyss",
+        "aquarium", "well", "ferry", "drowning", "bank", "deep", "fluid", "currents", "underwater",
+    },
+    "mirror": {
+        "mirror", "reflection", "glass", "silver", "frame", "looking", "stare", "antique",
+        "double", "gazing", "gaze", "eyes", "glance", "doppelganger", "speculum", "glimpse",
+        "vanity", "blinks", "unblinking", "staring",
+    },
+    "doll": {
+        "doll", "puppet", "toy", "mannequin", "porcelain", "figurine", "plaything", "effigy",
+        "marionette", "dollhouse", "dummy", "plush", "childhood",
+    },
+    "forest": {
+        "forest", "woods", "trees", "pines", "branches", "clearing", "cabin", "timber",
+        "grove", "wilderness", "jungle", "foliage", "leaves", "roots", "canopy", "hike",
+        "camper", "campfire", "tent", "ranger", "trail", "path",
+    },
+    "house": {
+        "house", "mansion", "home", "cabin", "manor", "residence", "estate", "attic",
+        "basement", "cellar", "room", "hallway", "corridor", "door", "window", "stairs",
+        "staircase", "walls", "floor", "porch", "asylum", "hospital", "hotel", "motel",
+        "building", "chapel", "church", "crypt",
+    },
+    "clock": {
+        "clock", "time", "chime", "chimes", "chiming", "midnight", "hour", "pendulum",
+        "ticks", "ticking", "watch", "seconds", "minutes", "alarm", "antique", "gear",
+    },
+    "ghost": {
+        "ghost", "spirit", "phantom", "specter", "spectre", "apparition", "shadow", "entity",
+        "presence", "whisper", "haunt", "haunted", "haunting", "poltergeist", "wraith",
+        "shade", "demon", "monster", "creature", "beast", "fiend", "ghoul",
+    },
+    "whisper": {
+        "whisper", "voice", "sound", "murmur", "calling", "echo", "echoes", "hiss",
+        "breathe", "breathing", "cry", "crying", "wail", "shriek", "groan", "footsteps",
+        "tapping", "scratching", "humming", "breathless",
+    },
+    "dream": {
+        "dream", "nightmare", "sleep", "sleeping", "awake", "slumber", "waking", "vision",
+        "paralysis", "hallucination", "trance", "hypnosis",
+    },
+    "painting": {
+        "painting", "portrait", "canvas", "frame", "artist", "brush", "eyes", "picture",
+        "gallery", "exhibit", "artwork",
+    },
+    "stairs": {
+        "stairs", "staircase", "steps", "basement", "cellar", "attic", "creak", "below",
+        "underneath", "spiral", "banister", "landing", "trapdoor",
+    },
+    "storm": {
+        "storm", "thunder", "thunderstorm", "thunderstorms", "lightning", "rain", "tempest",
+        "clouds", "darkness", "night", "wind", "gale", "fog", "mist", "blizzard", "chill",
+        "cold", "frozen", "ice",
+    },
+    "shadow": {
+        "shadow", "silhouette", "figure", "darkness", "shape", "outline", "shade",
+        "stalker", "lurking", "unseen", "blackness",
+    },
+    "grave": {
+        "grave", "graves", "cemetery", "graveyard", "tomb", "crypt", "coffin", "burial",
+        "buried", "bones", "skeleton", "corpse", "dead", "death", "tombstone",
+    },
+    "car": {
+        "car", "road", "highway", "drive", "driving", "headlights", "asphalt", "vehicle",
+        "bridge", "tunnel", "traffic", "hitchhiker",
+    },
+    "radio": {
+        "radio", "tape", "recording", "broadcast", "frequency", "signal", "radiator",
+        "static", "channel", "cassette", "transmission", "antenna",
+    },
+    "phone": {
+        "phone", "call", "calling", "screen", "message", "text", "ring", "ringing",
+        "voicemail", "camera", "photo", "recording", "video",
+    },
+    "book": {
+        "book", "diary", "journal", "pages", "parchment", "letter", "notes", "tome",
+        "manuscript", "symbols", "runes", "scroll",
+    },
+    "music": {
+        "music", "melody", "song", "instrument", "violin", "piano", "strings", "chords",
+        "lullaby", "tune", "notes", "orchestra",
+    },
+    "subway": {
+        "subway", "train", "station", "platform", "tracks", "tunnel", "commute", "underground", "rail",
+    },
 }
+
+WORD_TO_THEMES: dict[str, set[str]] = {}
+for _theme, _words in THEMATIC_CLUSTERS.items():
+    for _w in _words:
+        WORD_TO_THEMES.setdefault(_w, set()).add(_theme)
+
+
+def _check_relevance_via_ai(
+    topic: str,
+    title: str,
+    script: str,
+    scene_prompts: list[str] | None = None,
+    *,
+    timeout: float = 4.0,
+) -> bool | None:
+    """Lightweight bounded AI check using configured LLM provider (Groq, Gemini, or OpenRouter).
+    Returns:
+      True  -> Confirmed reasonably related
+      False -> Confirmed clearly unrelated
+      None  -> Provider unavailable, timed out, or error (fall back safely to deterministic check)
+    """
+    prompt = (
+        "You are an automated relevance gate for a horror storytelling channel.\n"
+        "Evaluate whether the Story is reasonably related in theme, setting, atmosphere, or premise to the Topic.\n"
+        "Creative metaphors, related horror tropes, and atmospheric variations ARE ACCEPTABLE.\n"
+        "Reject ONLY if the story is about a completely different, unrelated topic (e.g. a lake story versus an antique mirror in a shop).\n\n"
+        f"Topic: {topic}\n"
+        f"Title: {title}\n"
+        f"Story: {script[:350]}\n\n"
+        "Respond with ONLY 'YES' if reasonably related, or 'NO' if clearly unrelated."
+    )
+
+    # 1. Try Groq if configured
+    groq_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if groq_key:
+        try:
+            from groq import Groq
+            client = Groq(api_key=groq_key, timeout=timeout)
+            model = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+            resp = client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model=model,
+                max_tokens=8,
+                temperature=0.0,
+            )
+            ans = (resp.choices[0].message.content or "").strip().upper()
+            if "YES" in ans:
+                return True
+            if "NO" in ans:
+                return False
+        except Exception as e:
+            print(f"[RELEVANCE GATE] Groq relevance check skipped ({e}). Falling back.")
+
+    # 2. Try Gemini if configured
+    gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if gemini_key:
+        try:
+            import json
+            import urllib.request
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+            payload = json.dumps({
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"maxOutputTokens": 8, "temperature": 0.0},
+            }).encode("utf-8")
+            req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                data = json.loads(r.read().decode("utf-8"))
+                candidates = data.get("candidates", [])
+                if candidates:
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    if parts:
+                        ans = parts[0].get("text", "").strip().upper()
+                        if "YES" in ans:
+                            return True
+                        if "NO" in ans:
+                            return False
+        except Exception as e:
+            print(f"[RELEVANCE GATE] Gemini relevance check skipped ({e}). Falling back.")
+
+    # 3. Try OpenRouter if configured
+    openrouter_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+    if openrouter_key:
+        try:
+            import json
+            import urllib.request
+            base_url = os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1").rstrip("/")
+            model = os.environ.get("OPENROUTER_MODEL", "meta-llama/llama-3.2-3b-instruct:free")
+            url = f"{base_url}/chat/completions"
+            payload = json.dumps({
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 8,
+                "temperature": 0.0,
+            }).encode("utf-8")
+            req = urllib.request.Request(
+                url,
+                data=payload,
+                headers={"Authorization": f"Bearer {openrouter_key}", "Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                data = json.loads(r.read().decode("utf-8"))
+                choices = data.get("choices", [])
+                if choices:
+                    ans = (choices[0].get("message", {}).get("content") or "").strip().upper()
+                    if "YES" in ans:
+                        return True
+                    if "NO" in ans:
+                        return False
+        except Exception as e:
+            print(f"[RELEVANCE GATE] OpenRouter relevance check skipped ({e}). Falling back.")
+
+    return None
 
 
 def semantic_premise_match(
@@ -150,37 +337,91 @@ def semantic_premise_match(
     title: str,
     script: str,
     scene_prompts: list[str] | None = None,
+    *,
+    use_ai: bool = True,
 ) -> bool:
-    """Verify that topic, title, and script share coherent thematic concepts,
-    expanding known horror domain synonyms to permit creative metaphors.
+    """Verify that topic, title, and script share a reasonably coherent premise or theme.
+    
+    Permissive acceptance policy:
+    - Accepts creative storytelling, metaphors, atmospheric variations, and related tropes.
+    - Fast-path deterministic evaluation using direct keywords, stems, and thematic clusters.
+    - Lightweight bounded AI/LLM check when practical.
+    - If AI check fails, times out, or is unavailable, uses a permissive fallback to prevent
+      unnecessary upload cancellations.
+    - Rejects only clearly unrelated stories or empty content.
     """
     from pipeline.story_validator import extract_keywords
 
-    topic_keywords = extract_keywords(topic)
-    if not topic_keywords:
+    topic_str = (topic or "").strip()
+    if not topic_str:
         return False
 
-    title_text = (title or "").lower()
-    script_text = (script or "").lower()
-    combined_content = f"{title_text} {script_text}"
+    title_str = (title or "").strip()
+    script_str = (script or "").strip()
+    if not title_str and not script_str:
+        return False
+
+    combined_content = f"{title_str.lower()} {script_str.lower()}"
     if scene_prompts:
         combined_content += " " + " ".join(scene_prompts).lower()
 
-    matched_themes = 0
-    for word in topic_keywords:
-        # Check direct keyword presence as a distinct word
-        if re.search(r"\b" + re.escape(word) + r"\b", combined_content):
-            matched_themes += 1
-            continue
+    topic_keywords = extract_keywords(topic_str)
+    if not topic_keywords:
+        topic_keywords = set(re.findall(r"\b[a-zA-Z]{3,}\b", topic_str.lower()))
+    if not topic_keywords:
+        return True
 
-        # Check synonym cluster
-        cluster = THEMATIC_SYNONYMS.get(word)
-        if cluster:
-            if any(re.search(r"\b" + re.escape(syn) + r"\b", combined_content) for syn in cluster):
-                matched_themes += 1
-                continue
+    # ── 1. Fast-Path Deterministic Check: Direct Keyword or Stem Match ──
+    for kw in topic_keywords:
+        if re.search(r"\b" + re.escape(kw) + r"\b", combined_content):
+            return True
+        if len(kw) >= 4:
+            stem = kw[:-1] if kw.endswith("s") or kw.endswith("e") else kw
+            if len(stem) >= 4 and re.search(r"\b" + re.escape(stem), combined_content):
+                return True
 
-    return matched_themes > 0
+    # ── 2. Thematic Cluster Match ──────────────────────────────────────
+    topic_themes: set[str] = set()
+    for kw in topic_keywords:
+        if kw in WORD_TO_THEMES:
+            topic_themes.update(WORD_TO_THEMES[kw])
+        if len(kw) >= 4:
+            stem = kw[:-1] if kw.endswith("s") or kw.endswith("e") else kw
+            for word, themes in WORD_TO_THEMES.items():
+                if word.startswith(stem) or stem.startswith(word):
+                    topic_themes.update(themes)
+
+    if topic_themes:
+        for theme in topic_themes:
+            cluster_words = THEMATIC_CLUSTERS.get(theme, set())
+            for cword in cluster_words:
+                if re.search(r"\b" + re.escape(cword) + r"\b", combined_content):
+                    return True
+
+    # ── 3. AI Relevance Check (if enabled and configured) ──────────────
+    if use_ai:
+        try:
+            ai_verdict = _check_relevance_via_ai(topic_str, title_str, script_str, scene_prompts)
+            if ai_verdict is True:
+                return True
+            if ai_verdict is False:
+                return False
+        except Exception as e:
+            print(f"[RELEVANCE GATE] AI relevance check error: {e}. Falling back to permissive evaluation.")
+
+    # ── 4. Permissive Deterministic Fallback on Ambiguity / API Failure ──
+    content_words = set(re.findall(r"\b[a-zA-Z]{3,}\b", combined_content))
+    content_themes: set[str] = set()
+    for cw in content_words:
+        if cw in WORD_TO_THEMES:
+            content_themes.update(WORD_TO_THEMES[cw])
+
+    if topic_themes and content_themes:
+        overlap = topic_themes.intersection(content_themes)
+        if not overlap:
+            return False
+
+    return True
 
 
 # ─────────────────────────────────────────────────────────────────────────────
