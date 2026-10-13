@@ -517,6 +517,25 @@ def save_scene_image(
         except Exception as e:
             safe_e = str(e).replace(pollinations_key, "[REDACTED]")
             print(f"[WARN] Pollinations GPT Image failed for scene {index}: {safe_e}")
+            from pipeline.recovery import classify_error, ErrorCategory, rewrite_prompt_for_safety
+            if classify_error(e) == ErrorCategory.PROMPT_SAFETY_REJECTION:
+                softened = rewrite_prompt_for_safety(prompt)
+                if softened != prompt:
+                    print(f"   [RECOVERY] Prompt safety rejection on Pollinations for scene {index}. Retrying with softened prompt...")
+                    try:
+                        img_bytes, used_model, _usage = _pollinations_gpt_image_generate(
+                            softened,
+                            api_key=pollinations_key,
+                            width=width,
+                            height=height,
+                            model=model,
+                        )
+                        out_path.write_bytes(img_bytes)
+                        _validate_image_file(out_path)
+                        return "ok", f"pollinations ({used_model}, safety_recovered)"
+                    except Exception as e2:
+                        safe_e2 = str(e2).replace(pollinations_key, "[REDACTED]")
+                        print(f"[WARN] Pollinations softened retry also failed for scene {index}: {safe_e2}")
 
     # 3. Hugging Face Serverless Router API
     hf_token = os.environ.get("HF_TOKEN", "").strip()

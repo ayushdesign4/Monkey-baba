@@ -68,25 +68,31 @@ def validate_story_consistency(
         combined_content = title_keywords.union(script_keywords).union(scenes_keywords)
         matched = topic_keywords.intersection(combined_content)
         if len(matched) < min_keyword_matches:
-            raise StoryConsistencyError(
-                f"Story mismatch detected! Topic keywords {topic_keywords} do not match script/title/scenes. "
-                f"Topic: '{topic}' vs Title: '{title}'. Matched keywords: {matched}"
-            )
+            from pipeline.recovery import semantic_premise_match
+            if not semantic_premise_match(topic, title, script, scene_prompts):
+                raise StoryConsistencyError(
+                    f"Story mismatch detected! Topic keywords {topic_keywords} do not match script/title/scenes. "
+                    f"Topic: '{topic}' vs Title: '{title}'. Matched keywords: {matched}"
+                )
 
     # 2. Title keywords MUST be reflected in the script
     if title_keywords:
         title_in_script = title_keywords.intersection(script_keywords)
         if not title_in_script:
-            raise StoryConsistencyError(
-                f"Title mismatch detected! Title keywords {title_keywords} have no overlap with script narration. "
-                f"Title: '{title}'"
-            )
+            from pipeline.recovery import semantic_premise_match
+            if not semantic_premise_match(title, "", script):
+                raise StoryConsistencyError(
+                    f"Title mismatch detected! Title keywords {title_keywords} have no overlap with script narration. "
+                    f"Title: '{title}'"
+                )
 
     # 3. Scene prompts MUST reflect script elements
     if script_keywords and scenes_keywords:
         script_in_scenes = script_keywords.intersection(scenes_keywords)
         if len(script_in_scenes) < 2:
-            raise StoryConsistencyError(
-                f"Scene prompts divergence! Scene prompts have insufficient overlap with narration. "
-                f"Matched keywords: {script_in_scenes}"
-            )
+            from pipeline.recovery import semantic_premise_match
+            if not semantic_premise_match(script, "", all_scenes_text):
+                raise StoryConsistencyError(
+                    f"Scene prompts divergence! Scene prompts have insufficient overlap with narration. "
+                    f"Matched keywords: {script_in_scenes}"
+                )

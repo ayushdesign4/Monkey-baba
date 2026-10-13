@@ -69,6 +69,12 @@ from pipeline.story_history import (
     update_notification_status,
     update_topic_status,
 )
+from pipeline.recovery import (
+    RunStatus,
+    classify_error,
+    rebalance_scenes_on_omission,
+    reconcile_upload_state,
+)
 
 
 def run_pipeline(
@@ -84,6 +90,7 @@ def run_pipeline(
     """Execute the full end-to-end Short generation and upload pipeline."""
     preset = get_preset(channel_id)
     stages_passed: list[str] = []
+    recovered_actions: list[str] = []
     ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     run_dir = REPO_ROOT / "output" / "runs" / f"{channel_id}_{ts}"
     img_dir = run_dir / "images"
@@ -214,8 +221,27 @@ def run_pipeline(
 
         # ── 3b. Enforce Visual Quality Policy ───────────────────────────
         print("\n   Enforcing visual quality policy against scene manifest...")
-        validate_visual_quality_policy(scene_manifest, allow_procedural=allow_procedural)
-        print("   [VISUAL POLICY] Visual quality policy passed.")
+        try:
+            validate_visual_quality_policy(scene_manifest, allow_procedural=allow_procedural)
+            print("   [VISUAL POLICY] Visual quality policy passed.")
+        except Exception as vq_err:
+            valid_ai_paths = [
+                img_path for idx, img_path in enumerate(image_paths, start=1)
+                if "procedural" not in scene_manifest.get(idx, "").lower()
+            ]
+            if len(valid_ai_paths) >= 4 and not allow_procedural:
+                print(
+                    f"   [RECOVERY] Procedural placeholder rejected by Visual Quality Policy. "
+                    f"Recovering by omitting placeholder scenes ({len(image_paths) - len(valid_ai_paths)} omitted, "
+                    f"{len(valid_ai_paths)} AI scenes retained)..."
+                )
+                image_paths, scene_manifest, _ = rebalance_scenes_on_omission(
+                    valid_ai_paths, scene_manifest, total_duration=0.0, min_required_scenes=4
+                )
+                recovered_actions.append("scene_omission_rebalance")
+                print("   [RECOVERY] Rebalanced scenes to 100% genuine AI visuals.")
+            else:
+                raise vq_err
         stages_passed.append("Visual Assets")
 
         # ── 4. Edge TTS voiceover synthesis ─────────────────────────────
@@ -289,6 +315,14 @@ def run_pipeline(
         if is_dup_vid:
             raise RuntimeError(f"Duplicate video check failed: {dup_vid_reason}")
 
+        # Idempotent reconciliation check before attempting YouTube API
+        if should_upload:
+            is_already_up, dup_narr_reason = reconcile_upload_state(narration, video_sha256)
+            if is_already_up:
+                print(f"   [IDEMPOTENT] Upload reconciliation: {dup_narr_reason}. Skipping upload to prevent duplicate.")
+                should_upload = False
+                recovered_actions.append("idempotent_duplicate_upload_prevented")
+
         stages_passed.append("Pre-upload Verification")
 
         # ── 9. YouTube upload ───────────────────────────────────────────
@@ -355,6 +389,12 @@ def run_pipeline(
             print("   [DRY_RUN] Dry-run mode: skipping live success email.")
             update_notification_status(video_id, "skipped")
 
+        # Determine recovery run status
+        run_status_enum = (
+            RunStatus.DRY_RUN_SUCCESS if is_dry_run
+            else (RunStatus.RECOVERED_PUBLISHED if recovered_actions else RunStatus.PUBLISHED)
+        )
+
         # Save finished run state
         save_run_state({
             "run_id": run_id,
@@ -363,6 +403,8 @@ def run_pipeline(
             "finished_at_utc": datetime.now(timezone.utc).isoformat(),
             "stage": "completed",
             "status": "success",
+            "run_status": run_status_enum.value,
+            "recovered_actions": recovered_actions,
             "topic_id": topic_id,
             "video_id": video_id,
             "upload_status": "uploaded" if should_upload else "simulated",
@@ -376,6 +418,8 @@ def run_pipeline(
         print("\nPipeline execution finished successfully.")
         return {
             "status": "success",
+            "run_status": run_status_enum.value,
+            "recovered_actions": recovered_actions,
             "title": title,
             "video_id": video_id,
             "video_url": f"https://www.youtube.com/watch?v={video_id}",
@@ -391,12 +435,17 @@ def run_pipeline(
         if topic_id:
             update_topic_status(topic_id, "failed")
 
+        err_cat = classify_error(exc)
+        err_status_enum = RunStatus.DRY_RUN_FAILED if is_dry_run else RunStatus.FAILED_ACTION_REQUIRED
+
         save_run_state({
             "run_id": run_id,
             "channel": channel_id,
             "finished_at_utc": datetime.now(timezone.utc).isoformat(),
             "stage": "failed",
             "status": "failed",
+            "run_status": err_status_enum.value,
+            "error_category": err_cat.value,
             "topic_id": topic_id,
             "dry_run": is_dry_run,
             "last_error_summary": str(exc)[:300],
