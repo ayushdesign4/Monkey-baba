@@ -236,5 +236,19 @@
     "status": "failed",
     "youtube_video_id": null,
     "youtube_url": null
+  },
+  {
+    "topic_id": "topic_20261014_011934_7072",
+    "normalized_topic": "a voice recording from deep sea divers that captured words spoken in an ancient forgotten tongue",
+    "topic_title": "a voice recording from deep sea divers that captured words spoken in an ancient forgotten tongue",
+    "topic_summary": "",
+    "story_fingerprint": "2289fd117aa11b1429e10608ef2f94c7ab20ac727772eee4c422632e0f9b4280",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-14T01:19:34.895897+00:00",
+    "run_id": "38494928724",
+    "status": "uploaded",
+    "youtube_video_id": "hM-bRviJWUE",
+    "youtube_url": "https://www.youtube.com/watch?v=hM-bRviJWUE"
   }
 ]

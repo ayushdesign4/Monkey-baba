@@ -97,5 +97,22 @@
     "dry_run": false,
     "notification_status": "sent",
     "notification_sent_at_utc": "2026-10-11T06:17:21.052606+00:00"
+  },
+  {
+    "video_id": "hM-bRviJWUE",
+    "video_url": "https://www.youtube.com/watch?v=hM-bRviJWUE",
+    "title": "The Mariana Trench Audio Log Left Behind",
+    "topic_id": "topic_20261014_011934_7072",
+    "story_fingerprint": "2289fd117aa11b1429e10608ef2f94c7ab20ac727772eee4c422632e0f9b4280",
+    "video_sha256": "235d5fecd90a9970188517052ee4a121e0bd6982d11a397aab1671948a0aa4fb",
+    "duration_seconds": 47.0,
+    "language": "en",
+    "niche": "horror storytelling",
+    "uploaded_at_utc": "2026-10-14T01:23:57.994553+00:00",
+    "run_id": "38494928724",
+    "status": "uploaded",
+    "dry_run": false,
+    "notification_status": "sent",
+    "notification_sent_at_utc": "2026-10-14T01:23:59.523620+00:00"
   }
 ]

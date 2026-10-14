@@ -1,10 +1,25 @@
 {
-  "run_id": "38340029389",
+  "run_id": "38494928724",
   "channel": "horror",
-  "finished_at_utc": "2026-10-13T03:11:04.988130+00:00",
-  "stage": "failed",
-  "status": "failed",
-  "topic_id": "topic_20261013_030734_4848",
+  "started_at_utc": "20261014_011934",
+  "finished_at_utc": "2026-10-14T01:23:59.524191+00:00",
+  "stage": "completed",
+  "status": "success",
+  "run_status": "PUBLISHED",
+  "recovered_actions": [],
+  "topic_id": "topic_20261014_011934_7072",
+  "video_id": "hM-bRviJWUE",
+  "upload_status": "uploaded",
   "dry_run": false,
-  "last_error_summary": "Visual Quality Policy Violation: Procedural placeholders were used for scenes [3] because AI visual generation failed. Public upload is blocked to prevent uploading placeholder videos. To permit procedural visual placeholders, set ALLOW_PROCEDURAL_FALLBACK=true or pass --allow-procedural-fallback."
+  "script_provider": "gemini",
+  "script_model": "gemini-3.5-flash-lite",
+  "scene_manifest": {
+    "1": "pollinations (openai/gpt-image-1-mini)",
+    "2": "pollinations (openai/gpt-image-1-mini)",
+    "3": "pollinations (openai/gpt-image-1-mini)",
+    "4": "pollinations (openai/gpt-image-1-mini)",
+    "5": "pollinations (openai/gpt-image-1-mini)",
+    "6": "pollinations (openai/gpt-image-1-mini)"
+  },
+  "video_path": "/home/runner/work/Monkey-baba/Monkey-baba/output/runs/horror_20261014_011934/short_horror.mp4"
 }
