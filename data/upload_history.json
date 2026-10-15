@@ -114,5 +114,22 @@
     "dry_run": false,
     "notification_status": "sent",
     "notification_sent_at_utc": "2026-10-14T01:23:59.523620+00:00"
+  },
+  {
+    "video_id": "mmP25EhDqhI",
+    "video_url": "https://www.youtube.com/watch?v=mmP25EhDqhI",
+    "title": "The Book That Was Written Today",
+    "topic_id": "topic_20261015_004105_8639",
+    "story_fingerprint": "580f227c27670e11bfd2c7870a4cc68d4c9adae7011521c9efa6604a58fdfb76",
+    "video_sha256": "0f7beb35b84db7118d3cd05e16b76603b9a152a449d3fd6b92ca44f069b6ce1f",
+    "duration_seconds": 48.1,
+    "language": "en",
+    "niche": "horror storytelling",
+    "uploaded_at_utc": "2026-10-15T00:45:09.559275+00:00",
+    "run_id": "38661242176",
+    "status": "uploaded",
+    "dry_run": false,
+    "notification_status": "sent",
+    "notification_sent_at_utc": "2026-10-15T00:45:12.040764+00:00"
   }
 ]
