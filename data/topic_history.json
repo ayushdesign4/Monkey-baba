@@ -264,5 +264,19 @@
     "status": "uploaded",
     "youtube_video_id": "mmP25EhDqhI",
     "youtube_url": "https://www.youtube.com/watch?v=mmP25EhDqhI"
+  },
+  {
+    "topic_id": "topic_20261016_003332_2937",
+    "normalized_topic": "an old portrait where the subject s gaze subtly shifts whenever the room lights turn off",
+    "topic_title": "an old portrait where the subject's gaze subtly shifts whenever the room lights turn off",
+    "topic_summary": "",
+    "story_fingerprint": "44f55af63081d8574b6f6d6ad6a72611dc30de424d26c37f8257c2e98653ae27",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-16T00:33:32.815564+00:00",
+    "run_id": "38829936701",
+    "status": "failed",
+    "youtube_video_id": null,
+    "youtube_url": null
   }
 ]

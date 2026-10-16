@@ -1,25 +1,12 @@
 {
-  "run_id": "38661242176",
+  "run_id": "38829936701",
   "channel": "horror",
-  "started_at_utc": "20261015_004105",
-  "finished_at_utc": "2026-10-15T00:45:12.041300+00:00",
-  "stage": "completed",
-  "status": "success",
-  "run_status": "PUBLISHED",
-  "recovered_actions": [],
-  "topic_id": "topic_20261015_004105_8639",
-  "video_id": "mmP25EhDqhI",
-  "upload_status": "uploaded",
+  "finished_at_utc": "2026-10-16T00:38:58.992286+00:00",
+  "stage": "failed",
+  "status": "failed",
+  "run_status": "FAILED_ACTION_REQUIRED",
+  "error_category": "unknown",
+  "topic_id": "topic_20261016_003332_2937",
   "dry_run": false,
-  "script_provider": "gemini",
-  "script_model": "gemini-3.7-flash",
-  "scene_manifest": {
-    "1": "pollinations (openai/gpt-image-1-mini)",
-    "2": "pollinations (openai/gpt-image-1-mini)",
-    "3": "pollinations (openai/gpt-image-1-mini)",
-    "4": "pollinations (openai/gpt-image-1-mini)",
-    "5": "pollinations (openai/gpt-image-1-mini)",
-    "6": "pollinations (openai/gpt-image-1-mini)"
-  },
-  "video_path": "/home/runner/work/Monkey-baba/Monkey-baba/output/runs/horror_20261015_004105/short_horror.mp4"
+  "last_error_summary": "\n\n❌ YT_REFRESH_TOKEN is invalid or expired.\n   Common cause: OAuth consent screen is in 'Testing' mode (tokens expire after 7 days).\n\n   FIX:\n   1. Go to https://console.cloud.google.com/apis/credentials/consent\n      → click PUBLISH APP (ignore the 'Needs verification' warning).\n   2. Regenerate lo"
 }
