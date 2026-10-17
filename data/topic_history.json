@@ -278,5 +278,19 @@
     "status": "failed",
     "youtube_video_id": null,
     "youtube_url": null
+  },
+  {
+    "topic_id": "topic_20261017_004002_9181",
+    "normalized_topic": "a late night diner on an empty highway where every customer has the same blank expression",
+    "topic_title": "a late-night diner on an empty highway where every customer has the same blank expression",
+    "topic_summary": "",
+    "story_fingerprint": "96dcd7ebd7624c75331f4359abe314152c34bfa988a27a82945404ed40d83e87",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-17T00:40:02.663885+00:00",
+    "run_id": "38987250020",
+    "status": "uploaded",
+    "youtube_video_id": "I-rNm6MkV8c",
+    "youtube_url": "https://www.youtube.com/watch?v=I-rNm6MkV8c"
   }
 ]
