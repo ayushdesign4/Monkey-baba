@@ -292,5 +292,19 @@
     "status": "uploaded",
     "youtube_video_id": "I-rNm6MkV8c",
     "youtube_url": "https://www.youtube.com/watch?v=I-rNm6MkV8c"
+  },
+  {
+    "topic_id": "topic_20261018_000933_6802",
+    "normalized_topic": "a remote mountain cabin where footsteps circle the perimeter in fresh snow without returning",
+    "topic_title": "a remote mountain cabin where footsteps circle the perimeter in fresh snow without returning",
+    "topic_summary": "",
+    "story_fingerprint": "d1ecd52c6b38bdd1c4c615782d7f87d01784cf1ffad9b8a5244481bb8a966463",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-18T00:09:33.150586+00:00",
+    "run_id": "39081592591",
+    "status": "uploaded",
+    "youtube_video_id": "JOlF96BljKQ",
+    "youtube_url": "https://www.youtube.com/watch?v=JOlF96BljKQ"
   }
 ]

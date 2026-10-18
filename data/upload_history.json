@@ -148,5 +148,22 @@
     "dry_run": false,
     "notification_status": "sent",
     "notification_sent_at_utc": "2026-10-17T00:43:22.786899+00:00"
+  },
+  {
+    "video_id": "JOlF96BljKQ",
+    "video_url": "https://www.youtube.com/watch?v=JOlF96BljKQ",
+    "title": "The Footsteps in the Snow That Never Leave",
+    "topic_id": "topic_20261018_000933_6802",
+    "story_fingerprint": "d1ecd52c6b38bdd1c4c615782d7f87d01784cf1ffad9b8a5244481bb8a966463",
+    "video_sha256": "ea573744643d4a1679cfb06eda740f55d29dd0ea53a182c83ea13ee3018bd694",
+    "duration_seconds": 43.6,
+    "language": "en",
+    "niche": "horror storytelling",
+    "uploaded_at_utc": "2026-10-18T00:13:21.326399+00:00",
+    "run_id": "39081592591",
+    "status": "uploaded",
+    "dry_run": false,
+    "notification_status": "sent",
+    "notification_sent_at_utc": "2026-10-18T00:13:22.617405+00:00"
   }
 ]
