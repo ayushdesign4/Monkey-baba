@@ -165,5 +165,22 @@
     "dry_run": false,
     "notification_status": "sent",
     "notification_sent_at_utc": "2026-10-18T00:13:22.617405+00:00"
+  },
+  {
+    "video_id": "6ylcICpefF4",
+    "video_url": "https://www.youtube.com/watch?v=6ylcICpefF4",
+    "title": "The Lens Never Lies",
+    "topic_id": "topic_20261019_001949_7966",
+    "story_fingerprint": "d63fd0bee41a96785340f13a5f8dd69d469d06bd78f07e1e15bb3b896665d82f",
+    "video_sha256": "6c9fe1e54b436066a81b342cf900ec7a25cf049eca6db641a9483e4c7082d0e6",
+    "duration_seconds": 48.5,
+    "language": "en",
+    "niche": "horror storytelling",
+    "uploaded_at_utc": "2026-10-19T00:24:24.802786+00:00",
+    "run_id": "39180142222",
+    "status": "uploaded",
+    "dry_run": false,
+    "notification_status": "sent",
+    "notification_sent_at_utc": "2026-10-19T00:24:26.299612+00:00"
   }
 ]

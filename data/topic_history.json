@@ -306,5 +306,19 @@
     "status": "uploaded",
     "youtube_video_id": "JOlF96BljKQ",
     "youtube_url": "https://www.youtube.com/watch?v=JOlF96BljKQ"
+  },
+  {
+    "topic_id": "topic_20261019_001949_7966",
+    "normalized_topic": "a camera that captures shadowy silhouettes standing behind whoever holds it",
+    "topic_title": "a camera that captures shadowy silhouettes standing behind whoever holds it",
+    "topic_summary": "",
+    "story_fingerprint": "d63fd0bee41a96785340f13a5f8dd69d469d06bd78f07e1e15bb3b896665d82f",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-19T00:19:49.221778+00:00",
+    "run_id": "39180142222",
+    "status": "uploaded",
+    "youtube_video_id": "6ylcICpefF4",
+    "youtube_url": "https://www.youtube.com/watch?v=6ylcICpefF4"
   }
 ]
