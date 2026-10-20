@@ -182,5 +182,22 @@
     "dry_run": false,
     "notification_status": "sent",
     "notification_sent_at_utc": "2026-10-19T00:24:26.299612+00:00"
+  },
+  {
+    "video_id": "hhWDm4dEV5E",
+    "video_url": "https://www.youtube.com/watch?v=hhWDm4dEV5E",
+    "title": "The Thirteenth Chime",
+    "topic_id": "topic_20261020_011010_4576",
+    "story_fingerprint": "b3f8f47b4289f10cf00e8b8dd59cded1fa2d119e4bd8442f6795df8ac2a61d24",
+    "video_sha256": "e4472fd223895d6327aba26a2f8a670e1c76bfaf5d978a326ab9e3461c6fd5c7",
+    "duration_seconds": 42.4,
+    "language": "en",
+    "niche": "horror storytelling",
+    "uploaded_at_utc": "2026-10-20T01:14:28.355003+00:00",
+    "run_id": "39351697425",
+    "status": "uploaded",
+    "dry_run": false,
+    "notification_status": "sent",
+    "notification_sent_at_utc": "2026-10-20T01:14:31.020041+00:00"
   }
 ]

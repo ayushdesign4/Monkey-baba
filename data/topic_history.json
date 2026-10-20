@@ -320,5 +320,19 @@
     "status": "uploaded",
     "youtube_video_id": "6ylcICpefF4",
     "youtube_url": "https://www.youtube.com/watch?v=6ylcICpefF4"
+  },
+  {
+    "topic_id": "topic_20261020_011010_4576",
+    "normalized_topic": "a grandfather clock that adds an extra chime at midnight each week",
+    "topic_title": "a grandfather clock that adds an extra chime at midnight each week",
+    "topic_summary": "",
+    "story_fingerprint": "b3f8f47b4289f10cf00e8b8dd59cded1fa2d119e4bd8442f6795df8ac2a61d24",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-20T01:10:10.716218+00:00",
+    "run_id": "39351697425",
+    "status": "uploaded",
+    "youtube_video_id": "hhWDm4dEV5E",
+    "youtube_url": "https://www.youtube.com/watch?v=hhWDm4dEV5E"
   }
 ]
