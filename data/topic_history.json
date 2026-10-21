@@ -334,5 +334,19 @@
     "status": "uploaded",
     "youtube_video_id": "hhWDm4dEV5E",
     "youtube_url": "https://www.youtube.com/watch?v=hhWDm4dEV5E"
+  },
+  {
+    "topic_id": "topic_20261021_004457_4375",
+    "normalized_topic": "a deep forest trail where all animal and bird sounds abruptly vanish every hundred paces",
+    "topic_title": "a deep forest trail where all animal and bird sounds abruptly vanish every hundred paces",
+    "topic_summary": "",
+    "story_fingerprint": "7883e8bf5f7010835aa35de360ab9d18bb421d220e6433abf8dd68d519060675",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-21T00:44:57.783428+00:00",
+    "run_id": "39522952698",
+    "status": "uploaded",
+    "youtube_video_id": "fTbTmEx84hI",
+    "youtube_url": "https://www.youtube.com/watch?v=fTbTmEx84hI"
   }
 ]

@@ -199,5 +199,22 @@
     "dry_run": false,
     "notification_status": "sent",
     "notification_sent_at_utc": "2026-10-20T01:14:31.020041+00:00"
+  },
+  {
+    "video_id": "fTbTmEx84hI",
+    "video_url": "https://www.youtube.com/watch?v=fTbTmEx84hI",
+    "title": "The Silence Every Hundred Paces",
+    "topic_id": "topic_20261021_004457_4375",
+    "story_fingerprint": "7883e8bf5f7010835aa35de360ab9d18bb421d220e6433abf8dd68d519060675",
+    "video_sha256": "0d88099d2662987b0efac957040570a7da2f9acf6c8be2d37649d193ba75c0ac",
+    "duration_seconds": 48.1,
+    "language": "en",
+    "niche": "horror storytelling",
+    "uploaded_at_utc": "2026-10-21T00:48:33.522474+00:00",
+    "run_id": "39522952698",
+    "status": "uploaded",
+    "dry_run": false,
+    "notification_status": "sent",
+    "notification_sent_at_utc": "2026-10-21T00:48:34.599409+00:00"
   }
 ]
