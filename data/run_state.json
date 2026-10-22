@@ -1,18 +1,18 @@
 {
-  "run_id": "39522952698",
+  "run_id": "39701648367",
   "channel": "horror",
-  "started_at_utc": "20261021_004457",
-  "finished_at_utc": "2026-10-21T00:48:34.599997+00:00",
+  "started_at_utc": "20261022_004750",
+  "finished_at_utc": "2026-10-22T00:51:59.443841+00:00",
   "stage": "completed",
   "status": "success",
   "run_status": "PUBLISHED",
   "recovered_actions": [],
-  "topic_id": "topic_20261021_004457_4375",
-  "video_id": "fTbTmEx84hI",
+  "topic_id": "topic_20261022_004750_1805",
+  "video_id": "dD29OZF5kSY",
   "upload_status": "uploaded",
   "dry_run": false,
   "script_provider": "gemini",
-  "script_model": "gemini-3.8-flash",
+  "script_model": "gemini-3.5-flash",
   "scene_manifest": {
     "1": "pollinations (openai/gpt-image-1-mini)",
     "2": "pollinations (openai/gpt-image-1-mini)",
@@ -21,5 +21,5 @@
     "5": "pollinations (openai/gpt-image-1-mini)",
     "6": "pollinations (openai/gpt-image-1-mini)"
   },
-  "video_path": "/home/runner/work/Monkey-baba/Monkey-baba/output/runs/horror_20261021_004457/short_horror.mp4"
+  "video_path": "/home/runner/work/Monkey-baba/Monkey-baba/output/runs/horror_20261022_004750/short_horror.mp4"
 }

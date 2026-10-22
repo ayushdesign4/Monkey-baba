@@ -348,5 +348,19 @@
     "status": "uploaded",
     "youtube_video_id": "fTbTmEx84hI",
     "youtube_url": "https://www.youtube.com/watch?v=fTbTmEx84hI"
+  },
+  {
+    "topic_id": "topic_20261022_004750_1805",
+    "normalized_topic": "the reflection in the antique mirror that blinks three seconds late",
+    "topic_title": "the reflection in the antique mirror that blinks three seconds late",
+    "topic_summary": "",
+    "story_fingerprint": "d6bf23e47d7de5aeef25c8c324b0a1715237064361b7e177522c47e34c620663",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-22T00:47:50.131273+00:00",
+    "run_id": "39701648367",
+    "status": "uploaded",
+    "youtube_video_id": "dD29OZF5kSY",
+    "youtube_url": "https://www.youtube.com/watch?v=dD29OZF5kSY"
   }
 ]

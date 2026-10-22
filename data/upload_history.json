@@ -216,5 +216,22 @@
     "dry_run": false,
     "notification_status": "sent",
     "notification_sent_at_utc": "2026-10-21T00:48:34.599409+00:00"
+  },
+  {
+    "video_id": "dD29OZF5kSY",
+    "video_url": "https://www.youtube.com/watch?v=dD29OZF5kSY",
+    "title": "The Mirror That Blinks Three Seconds Late",
+    "topic_id": "topic_20261022_004750_1805",
+    "story_fingerprint": "d6bf23e47d7de5aeef25c8c324b0a1715237064361b7e177522c47e34c620663",
+    "video_sha256": "0b336f13746862dbc73bbb3a38117cb20978b4dfad58810b76d34706e9155294",
+    "duration_seconds": 46.7,
+    "language": "en",
+    "niche": "horror storytelling",
+    "uploaded_at_utc": "2026-10-22T00:51:57.440457+00:00",
+    "run_id": "39701648367",
+    "status": "uploaded",
+    "dry_run": false,
+    "notification_status": "sent",
+    "notification_sent_at_utc": "2026-10-22T00:51:59.443026+00:00"
   }
 ]
