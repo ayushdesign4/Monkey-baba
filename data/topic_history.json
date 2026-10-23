@@ -362,5 +362,19 @@
     "status": "uploaded",
     "youtube_video_id": "dD29OZF5kSY",
     "youtube_url": "https://www.youtube.com/watch?v=dD29OZF5kSY"
+  },
+  {
+    "topic_id": "topic_20261023_004828_7334",
+    "normalized_topic": "a baby monitor picking up a gentle lullaby sung by someone standing right next to the crib",
+    "topic_title": "a baby monitor picking up a gentle lullaby sung by someone standing right next to the crib",
+    "topic_summary": "",
+    "story_fingerprint": "d5385fa21dfa3db59eb1e0612422ce0c2a24df54485e21ca2fb2e45ebe3bc180",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-23T00:48:28.620673+00:00",
+    "run_id": "39880053777",
+    "status": "uploaded",
+    "youtube_video_id": "OTxOzf0VNc0",
+    "youtube_url": "https://www.youtube.com/watch?v=OTxOzf0VNc0"
   }
 ]

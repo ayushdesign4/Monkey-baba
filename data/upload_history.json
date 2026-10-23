@@ -233,5 +233,22 @@
     "dry_run": false,
     "notification_status": "sent",
     "notification_sent_at_utc": "2026-10-22T00:51:59.443026+00:00"
+  },
+  {
+    "video_id": "OTxOzf0VNc0",
+    "video_url": "https://www.youtube.com/watch?v=OTxOzf0VNc0",
+    "title": "The Lullaby on the Monitor",
+    "topic_id": "topic_20261023_004828_7334",
+    "story_fingerprint": "d5385fa21dfa3db59eb1e0612422ce0c2a24df54485e21ca2fb2e45ebe3bc180",
+    "video_sha256": "89c3456b20bca706f20b72b6d60c16f24708de3b7ffa9edd5fa6c2be5cfd1f6d",
+    "duration_seconds": 43.8,
+    "language": "en",
+    "niche": "horror storytelling",
+    "uploaded_at_utc": "2026-10-23T00:53:13.836935+00:00",
+    "run_id": "39880053777",
+    "status": "uploaded",
+    "dry_run": false,
+    "notification_status": "sent",
+    "notification_sent_at_utc": "2026-10-23T00:53:15.289835+00:00"
   }
 ]
