@@ -376,5 +376,19 @@
     "status": "uploaded",
     "youtube_video_id": "OTxOzf0VNc0",
     "youtube_url": "https://www.youtube.com/watch?v=OTxOzf0VNc0"
+  },
+  {
+    "topic_id": "topic_20261024_005420_7058",
+    "normalized_topic": "a gps navigation system that slowly directs a late night driver toward a forgotten cemetery",
+    "topic_title": "a GPS navigation system that slowly directs a late-night driver toward a forgotten cemetery",
+    "topic_summary": "",
+    "story_fingerprint": "c3a4ea30730658881db54e3de8f9c788aceab52dbbc22d66b0309a59b07c6895",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-24T00:54:20.319089+00:00",
+    "run_id": "40047094199",
+    "status": "failed",
+    "youtube_video_id": null,
+    "youtube_url": null
   }
 ]
