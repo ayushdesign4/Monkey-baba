@@ -1,12 +1,12 @@
 {
-  "run_id": "40047094199",
+  "run_id": "40146566321",
   "channel": "horror",
-  "finished_at_utc": "2026-10-24T00:59:33.811879+00:00",
+  "finished_at_utc": "2026-10-25T00:31:31.765984+00:00",
   "stage": "failed",
   "status": "failed",
   "run_status": "FAILED_ACTION_REQUIRED",
   "error_category": "unknown",
-  "topic_id": "topic_20261024_005420_7058",
+  "topic_id": "topic_20261025_002643_1227",
   "dry_run": false,
   "last_error_summary": "\n\n❌ YT_REFRESH_TOKEN is invalid or expired.\n   Common cause: OAuth consent screen is in 'Testing' mode (tokens expire after 7 days).\n\n   FIX:\n   1. Go to https://console.cloud.google.com/apis/credentials/consent\n      → click PUBLISH APP (ignore the 'Needs verification' warning).\n   2. Regenerate lo"
 }

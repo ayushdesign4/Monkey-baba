@@ -390,5 +390,19 @@
     "status": "failed",
     "youtube_video_id": null,
     "youtube_url": null
+  },
+  {
+    "topic_id": "topic_20261025_002643_1227",
+    "normalized_topic": "a mysterious wooden box washed ashore sealed with heavy wax and iron chains",
+    "topic_title": "a mysterious wooden box washed ashore sealed with heavy wax and iron chains",
+    "topic_summary": "",
+    "story_fingerprint": "9cd5b65e0aa34a18fb25db5a853cb753926bb5138c2c0ba6d420c9b87acf46c3",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-25T00:26:43.212147+00:00",
+    "run_id": "40146566321",
+    "status": "failed",
+    "youtube_video_id": null,
+    "youtube_url": null
   }
 ]
