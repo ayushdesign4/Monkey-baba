@@ -404,5 +404,19 @@
     "status": "failed",
     "youtube_video_id": null,
     "youtube_url": null
+  },
+  {
+    "topic_id": "topic_20261026_003317_8169",
+    "normalized_topic": "an empty subway train that arrives at 3 15 am every foggy night",
+    "topic_title": "an empty subway train that arrives at 3:15 AM every foggy night",
+    "topic_summary": "",
+    "story_fingerprint": "ffedeebea0d2ff1bf65eaa8aa98d1270e1ebfbd5ad5bf019e2392a9a1a9832f4",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-26T00:33:17.755369+00:00",
+    "run_id": "40249694928",
+    "status": "failed",
+    "youtube_video_id": null,
+    "youtube_url": null
   }
 ]
