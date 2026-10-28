@@ -418,5 +418,19 @@
     "status": "failed",
     "youtube_video_id": null,
     "youtube_url": null
+  },
+  {
+    "topic_id": "topic_20261028_013156_8028",
+    "normalized_topic": "an old portrait where the subject s gaze subtly shifts whenever the room lights turn off",
+    "topic_title": "an old portrait where the subject's gaze subtly shifts whenever the room lights turn off",
+    "topic_summary": "",
+    "story_fingerprint": "9c2fe913ae789e0a47bc5c79a6a771c07cb6cd748430415a3ce72d1e786c8576",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-28T01:31:56.771108+00:00",
+    "run_id": "40615387920",
+    "status": "failed",
+    "youtube_video_id": null,
+    "youtube_url": null
   }
 ]
