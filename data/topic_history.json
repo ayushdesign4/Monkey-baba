@@ -432,5 +432,19 @@
     "status": "failed",
     "youtube_video_id": null,
     "youtube_url": null
+  },
+  {
+    "topic_id": "topic_20261029_015552_2639",
+    "normalized_topic": "an abandoned hospital where room 404 s call bell rings every midnight",
+    "topic_title": "an abandoned hospital where room 404's call bell rings every midnight",
+    "topic_summary": "",
+    "story_fingerprint": "4a6b37d81f0410e13c1b5a7055287d6473ff1c0e4010d044ceea70d15767deec",
+    "key_entities": [],
+    "story_type": "horror storytelling",
+    "created_at_utc": "2026-10-29T01:55:52.191635+00:00",
+    "run_id": "40803066898",
+    "status": "failed",
+    "youtube_video_id": null,
+    "youtube_url": null
   }
 ]
